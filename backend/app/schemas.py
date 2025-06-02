@@ -56,3 +56,40 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True 
+
+class StudentCreate(BaseModel):
+    Major: str
+    AcademicYear: str
+    GPA: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+# مدل برای دریافت اطلاعات ورودی مشاور
+class CounselorCreate(BaseModel):
+    Department: str
+    AvailableSlots: int
+
+    class Config:
+        orm_mode = True
+
+# مدل برای خروجی دانشجو
+class StudentOut(BaseModel):
+    Student_ID: int
+    Major: str
+    AcademicYear: str
+    GPA: Optional[int] = None
+    User_ID: int
+
+    class Config:
+        orm_mode = True
+
+# مدل برای خروجی مشاور
+class CounselorOut(BaseModel):
+    Counselor_ID: int
+    Department: str
+    AvailableSlots: int
+    User_ID: int
+
+    class Config:
+        from_attributes = True
