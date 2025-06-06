@@ -1,22 +1,36 @@
 from sqlalchemy.orm import Session
 from . import models, schemas, auth
+from .schemas import RoleEnum
+from fastapi import HTTPException
 
 
 def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     if db.query(models.User).filter(models.User.email == user_in.email).first():
         return None
-    hashed = auth.get_hashed_password(user_in.password)
+
     db_user = models.User(
         firstname=user_in.firstname,
         lastname=user_in.lastname,
         email=user_in.email,
         phone_number=user_in.phone_number,
-        password_hash=hashed,
+        password_hash=auth.get_hashed_password(user_in.password),
         role=user_in.role
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    db.commit() 
+    db.refresh(db_user) 
+
+    if user_in.role == models.RoleEnum.student.value:
+        db_student = models.Student(user_id=db_user.userid)  
+        db.add(db_student)
+        db.commit() 
+        db.refresh(db_student) 
+    elif user_in.role == models.RoleEnum.counselor.value:
+        db_counselor = models.Counselor(user_id=db_user.userid)  
+        db.add(db_counselor)
+        db.commit()  
+        db.refresh(db_counselor)  
+
     return db_user
 
 # ==== Read ====
@@ -62,3 +76,88 @@ def delete_user(db: Session, userid: int) -> bool:
     db.delete(user)
     db.commit()
     return True
+
+# ==== Read ====
+
+def get_student_by_user_id(db: Session, user_id: int) -> models.Student | None:
+    return db.query(models.Student).filter(models.Student.user_id == user_id).first()
+
+def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | None:
+    return db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+
+def get_student_by_id(db: Session, student_id: int) -> models.Student | None:
+    return db.query(models.Student).filter(models.Student.student_id == student_id).first()
+
+def get_counselor_by_id(db: Session, counselor_id: int) -> models.Counselor | None:
+    return db.query(models.Counselor).filter(models.Counselor.counselor_id == counselor_id).first()
+
+# ==== Update ====
+def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdate | schemas.CounselorUpdate):
+    user = db.query(models.User).filter(models.User.userid == user_id).first()
+    if user:
+        if user_in.firstname:
+            user.firstname = user_in.firstname
+        if user_in.lastname:
+            user.lastname = user_in.lastname
+        if user_in.email:
+            user.email = user_in.email
+        if user_in.phone_number:
+            user.phone_number = user_in.phone_number
+        db.commit()
+        db.refresh(user)
+        return user
+    else:
+        raise HTTPException(status_code=404, detail="User not found")  
+def update_student_profile(db: Session, student_id: int, student_in: schemas.StudentUpdate):
+    student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
+    if student:
+        if student_in.major:
+            student.major = student_in.major
+        if student_in.academic_year:
+            student.academic_year = student_in.academic_year
+        if student_in.gpa is not None:
+            student.gpa = student_in.gpa
+        db.commit()
+        db.refresh(student)
+        return student
+    else:
+        raise HTTPException(status_code=404, detail="Student not found") 
+
+def update_counselor_profile(db: Session, user_id: int, counselor_in: schemas.CounselorUpdate):
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+    
+    if counselor:
+        if counselor_in.department:
+            counselor.department = counselor_in.department
+        if counselor_in.available_slots is not None:
+            counselor.available_slots = counselor_in.available_slots
+        
+        db.commit()
+        db.refresh(counselor)
+        return counselor
+    return None
+
+# ==== Delete ====
+
+def delete_student(db: Session, student_id: int) -> bool:
+    student = get_student_by_id(db, student_id)
+    if student:
+        db.delete(student)
+        db.commit()
+        return True
+    return False
+
+def delete_counselor(db: Session, counselor_id: int) -> bool:
+    counselor = get_counselor_by_id(db, counselor_id)
+    if counselor:
+        db.delete(counselor)
+        db.commit()
+        return True
+    return False
+
+def get_student_by_user_id(db: Session, user_id: int) -> models.Student | None:
+    return db.query(models.Student).filter(models.Student.user_id == user_id).first()
+
+def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | None:
+    return db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+

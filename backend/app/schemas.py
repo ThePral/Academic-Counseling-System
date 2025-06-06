@@ -6,8 +6,8 @@ import re
 
 class RoleEnum(str, Enum):
     student = "student"
-    consumer = "consumer"
     admin = "admin"
+    counselor = "counselor"
 
 class UserCreate(BaseModel):
     firstname: str
@@ -57,3 +57,71 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True 
 
+
+class StudentCreate(BaseModel):
+    major: str
+    academic_year: str
+    gpa: float
+
+
+
+class CounselorCreate(BaseModel):
+    department: str
+    available_slots: int
+
+
+class StudentOut(BaseModel):
+    student_id: int
+    major: Optional[str] 
+    academic_year: Optional[str]  
+    gpa: Optional[float]
+    
+    firstname: str
+    lastname: str
+    email: str
+    phone_number: Optional[str]
+    role: str
+    registrationDate: datetime
+
+    class Config:
+        from_attributes = True
+
+class CounselorOut(BaseModel):
+    counselor_id: int
+    department: Optional[str] 
+    available_slots: Optional[int]  
+   
+    firstname: str
+    lastname: str
+    email: str
+    phone_number: Optional[str]
+    role: str
+    registrationDate: datetime
+
+    class Config:
+        from_attributes = True
+
+        
+class UserUpdate(BaseModel):
+    firstname: Optional[str]
+    lastname: Optional[str]
+    email: Optional[EmailStr]
+    phone_number: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+class StudentUpdate(BaseModel):
+    major: Optional[str]
+    academic_year: Optional[str]
+    gpa: Optional[float]
+    firstname: Optional[str] 
+    lastname: Optional[str]  
+    email: Optional[EmailStr] 
+    phone_number: Optional[str] 
+class CounselorUpdate(UserUpdate):
+    department: Optional[str]
+    available_slots: Optional[int]
+
+    class Config:
+        from_attributes = True
