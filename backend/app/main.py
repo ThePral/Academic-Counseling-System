@@ -4,6 +4,7 @@ from .schemas import RoleEnum
 from . import models, schemas, crud, auth
 from .database import engine, get_db
 from .models import Base
+from app.schemas import PasswordChangeRequest
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,7 +21,6 @@ def is_own_data(user_id: int, data_id: int) -> bool:
 @app.post("/signup", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     user = crud.create_user(db, user_in)
-    print(f"Role being saved: {RoleEnum[user_in.role]}")
 
     if not user:
         raise HTTPException(
@@ -41,6 +41,19 @@ def login(form_data: schemas.UserLogin, db: Session = Depends(get_db)):
     refresh_token = auth.create_refresh_token(subject=user.userid)
     return {"access_token": access_token, "refresh_token": refresh_token}
 
+from app.schemas import PasswordChangeRequest
+
+@app.post("/change-password")
+def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, request.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    success = crud.change_user_password(db, request.email, request.new_password)
+    if not success:
+        raise HTTPException(status_code=500, detail="Password update failed")
+
+    return {"message": "Password updated successfully"}
 
 @app.post("/refresh", response_model=schemas.Token)
 def refresh_token(token: schemas.Token, db: Session = Depends(get_db)):
@@ -70,16 +83,15 @@ def get_student_info(db: Session = Depends(get_db), payload: dict = Depends(auth
         raise HTTPException(status_code=404, detail="Student not found")
     
     student_data = {
-        'student_id': student.student_id,
-        'major': student.major if student.major else None,
-        'academic_year': student.academic_year if student.academic_year else None,
-        'gpa': student.gpa if student.gpa else None,
-        'firstname': user.firstname,
-        'lastname': user.lastname,
-        'email': user.email,
-        'phone_number': user.phone_number,
-        'role': user.role,
-        'registrationDate': user.registrationDate
+            'firstname': user.firstname,
+            'lastname': user.lastname,
+            'email': user.email,
+            'phone_number': student.phone_number,
+            'province': student.province,
+            'city': student.city,
+            'academic_year':student.academic_year,
+            'major': student.major,
+            'gpa': student.gpa
     }
     return schemas.StudentOut(**student_data)
 
@@ -89,22 +101,23 @@ def get_counselor_info(db: Session = Depends(get_db), payload: dict = Depends(au
     user_id = int(payload.get("sub"))
     user = crud.get_user_by_id(db, user_id)
     counselor = crud.get_counselor_by_user_id(db, user_id)
-    
+
     if not counselor:
         raise HTTPException(status_code=404, detail="Counselor not found")
 
     counselor_data = {
-        'counselor_id': counselor.counselor_id,
-        'department': counselor.department if counselor.department else None,
-        'available_slots': counselor.available_slots if counselor.available_slots is not None else None,
         'firstname': user.firstname,
         'lastname': user.lastname,
         'email': user.email,
-        'phone_number': user.phone_number,
-        'role': user.role,
-        'registrationDate': user.registrationDate
+        'phone_number': counselor.phone_number,
+        'province': counselor.province,
+        'city': counselor.city,
+        'department': counselor.department if counselor.department else None,
+        'available_days': [day.value for day in counselor.available_days] if counselor.available_days else [],
+        'time_slots': [slot.value for slot in counselor.time_slots] if counselor.time_slots else []
     }
     return schemas.CounselorOut(**counselor_data)
+
 
 
 #update
@@ -123,16 +136,15 @@ def update_student(student_in: schemas.StudentUpdate, db: Session = Depends(get_
         updated_user = crud.update_user_profile(db, user_id, student_in)
 
         student_data = {
-            'student_id': updated_student.student_id,
-            'major': updated_student.major,
-            'academic_year': updated_student.academic_year,
-            'gpa': updated_student.gpa,
-            'firstname': updated_user.firstname,
+           'firstname': updated_user.firstname,
             'lastname': updated_user.lastname,
             'email': updated_user.email,
-            'phone_number': updated_user.phone_number,
-            'role': updated_user.role,
-            'registrationDate': updated_user.registrationDate
+            'phone_number': updated_student.phone_number,
+            'province': updated_student.province,
+            'city': updated_student.city,
+            'academic_year': updated_student.academic_year,
+            'major': updated_student.major,
+            'gpa': updated_student.gpa
         }
 
         return schemas.StudentOut(**student_data)
@@ -149,28 +161,30 @@ def update_counselor(counselor_in: schemas.CounselorUpdate, db: Session = Depend
         raise HTTPException(status_code=404, detail="Counselor not found")
 
     if is_admin(user.role) or is_own_data(user_id, counselor.user_id):
-
         updated_counselor = crud.update_counselor_profile(db, counselor.user_id, counselor_in)
         updated_user = crud.update_user_profile(db, user_id, counselor_in)
+
+
         counselor_data = {
-            'counselor_id': updated_counselor.counselor_id,
-            'department': updated_counselor.department,
-            'available_slots': updated_counselor.available_slots,
             'firstname': updated_user.firstname,
             'lastname': updated_user.lastname,
             'email': updated_user.email,
-            'phone_number': updated_user.phone_number,
-            'role': updated_user.role,
-            'registrationDate': updated_user.registrationDate
+            'phone_number': updated_counselor.phone_number,
+            'province': updated_counselor.province,
+            'city': updated_counselor.city,
+            'department': updated_counselor.department if updated_counselor.department else None,
+            'available_days': [day.value for day in updated_counselor.available_days] if updated_counselor.available_days else [],
+            'time_slots': [slot.value for slot in updated_counselor.time_slots] if updated_counselor.time_slots else []
         }
         return schemas.CounselorOut(**counselor_data)
     else:
         raise HTTPException(status_code=403, detail="Permission denied")
+
   
     
 #delete
 
-@app.delete("/students/me", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/students/me", status_code=status.HTTP_204_NO_CONTENT) 
 def delete_student(db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
     user_id = int(payload.get("sub"))
     user = crud.get_user_by_id(db, user_id)

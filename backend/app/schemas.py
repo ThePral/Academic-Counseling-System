@@ -1,19 +1,26 @@
-from pydantic import BaseModel, EmailStr,  validator
-from enum import Enum
-from typing import Optional
+from pydantic import BaseModel, EmailStr,  validator, Field, constr
+from typing import Optional, List
 from datetime import datetime
 import re
+from .models import DayOfWeek, TimeSlot, RoleEnum
 
-class RoleEnum(str, Enum):
-    student = "student"
-    admin = "admin"
-    counselor = "counselor"
 
+
+class PasswordChangeRequest(BaseModel):
+    email: EmailStr
+    new_password: constr(min_length=8)
+    confirm_password: constr(min_length=8)
+
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'new_password' in values and v != values['new_password']:
+            raise ValueError('Passwords do not match')
+        return v
+    
 class UserCreate(BaseModel):
     firstname: str
     lastname: str
     email: EmailStr
-    phone_number: Optional[str]
     password: str
     role: RoleEnum
     @validator('password')
@@ -29,13 +36,6 @@ class UserCreate(BaseModel):
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
             raise ValueError('Password must contain at least one special character')
         return v  
-    @validator('phone_number')
-    def validate_phone_number(cls, v):
-        if v is None:
-            return v
-        if not re.fullmatch(r'09\d{9}', v):
-            raise ValueError('Phone number must start with "09" and be exactly 11 digits')
-        return v  
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -50,53 +50,36 @@ class UserOut(BaseModel):
     firstname: str
     lastname: str
     email: EmailStr
-    phone_number: Optional[str]
     role: RoleEnum
     registrationDate: datetime
 
     class Config:
         from_attributes = True 
 
-
-class StudentCreate(BaseModel):
-    major: str
-    academic_year: str
-    gpa: float
-
-
-
-class CounselorCreate(BaseModel):
-    department: str
-    available_slots: int
-
-
 class StudentOut(BaseModel):
-    student_id: int
-    major: Optional[str] 
-    academic_year: Optional[str]  
-    gpa: Optional[float]
-    
     firstname: str
     lastname: str
     email: str
     phone_number: Optional[str]
-    role: str
-    registrationDate: datetime
-
+    province: Optional[str]
+    city: Optional[str]
+    academic_year: Optional[str]  
+    major: Optional[str] 
+    gpa: Optional[float]
+    
     class Config:
         from_attributes = True
 
 class CounselorOut(BaseModel):
-    counselor_id: int
-    department: Optional[str] 
-    available_slots: Optional[int]  
-   
     firstname: str
     lastname: str
     email: str
     phone_number: Optional[str]
-    role: str
-    registrationDate: datetime
+    province: Optional[str]
+    city: Optional[str]
+    department: Optional[str]
+    available_days: List[DayOfWeek] = Field(..., description="List of available days for the counselor")
+    time_slots: List[TimeSlot] = Field(..., description="List of available time slots")
 
     class Config:
         from_attributes = True
@@ -106,22 +89,31 @@ class UserUpdate(BaseModel):
     firstname: Optional[str]
     lastname: Optional[str]
     email: Optional[EmailStr]
-    phone_number: Optional[str]
-
     class Config:
         from_attributes = True
 
 class StudentUpdate(BaseModel):
-    major: Optional[str]
-    academic_year: Optional[str]
-    gpa: Optional[float]
     firstname: Optional[str] 
     lastname: Optional[str]  
     email: Optional[EmailStr] 
     phone_number: Optional[str] 
+    province: Optional[str]
+    city: Optional[str] 
+    academic_year: Optional[str]
+    major: Optional[str]
+    gpa: Optional[float]
+    
+    
 class CounselorUpdate(UserUpdate):
+    phone_number: Optional[str]
+    province: Optional[str]
+    city: Optional[str]
     department: Optional[str]
-    available_slots: Optional[int]
-
+    available_days: List[DayOfWeek] = Field(..., description="List of available days for the counselor")
+    time_slots: List[TimeSlot] = Field(..., description="List of available time slots")
+    
     class Config:
         from_attributes = True
+        
+        
+

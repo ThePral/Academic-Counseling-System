@@ -12,26 +12,34 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
         firstname=user_in.firstname,
         lastname=user_in.lastname,
         email=user_in.email,
-        phone_number=user_in.phone_number,
         password_hash=auth.get_hashed_password(user_in.password),
         role=user_in.role
     )
     db.add(db_user)
     db.commit() 
     db.refresh(db_user) 
-
-    if user_in.role == models.RoleEnum.student.value:
+    if user_in.role == models.RoleEnum.student:
         db_student = models.Student(user_id=db_user.userid)  
         db.add(db_student)
         db.commit() 
         db.refresh(db_student) 
-    elif user_in.role == models.RoleEnum.counselor.value:
+    elif user_in.role == models.RoleEnum.counselor:
         db_counselor = models.Counselor(user_id=db_user.userid)  
         db.add(db_counselor)
         db.commit()  
         db.refresh(db_counselor)  
 
     return db_user
+
+
+def change_user_password(db: Session, email: str, new_password: str) -> bool:
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        return False
+    user.password_hash = auth.get_hashed_password(new_password)
+    db.commit()
+    db.refresh(user) 
+    return True
 
 # ==== Read ====
 
@@ -49,6 +57,7 @@ def authenticate_user(db: Session, email: str, password: str) -> models.User | N
         return None
     if not auth.verify_password(password, user.password_hash):
         return None
+    
     return user
 
 # ==== Update ====
@@ -101,8 +110,6 @@ def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdat
             user.lastname = user_in.lastname
         if user_in.email:
             user.email = user_in.email
-        if user_in.phone_number:
-            user.phone_number = user_in.phone_number
         db.commit()
         db.refresh(user)
         return user
@@ -111,10 +118,16 @@ def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdat
 def update_student_profile(db: Session, student_id: int, student_in: schemas.StudentUpdate):
     student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
     if student:
+        if student_in.phone_number:
+            student.phone_number = student_in.phone_number
+        if student_in.province:
+            student.province = student_in.province    
+        if student_in.city:
+            student.city = student_in.city 
+        if student_in.academic_year:
+            student.academic_year = student_in.academic_year    
         if student_in.major:
             student.major = student_in.major
-        if student_in.academic_year:
-            student.academic_year = student_in.academic_year
         if student_in.gpa is not None:
             student.gpa = student_in.gpa
         db.commit()
@@ -127,10 +140,18 @@ def update_counselor_profile(db: Session, user_id: int, counselor_in: schemas.Co
     counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
     
     if counselor:
+        if counselor_in.phone_number:
+            counselor.phone_number = counselor_in.phone_number
+        if counselor_in.province:
+            counselor.province = counselor_in.province    
+        if counselor_in.city:
+            counselor.city = counselor_in.city 
         if counselor_in.department:
             counselor.department = counselor_in.department
-        if counselor_in.available_slots is not None:
-            counselor.available_slots = counselor_in.available_slots
+        if counselor_in.available_days is not None:
+            counselor.available_days = counselor_in.available_days
+        if counselor_in.time_slots is not None:
+            counselor.time_slots = counselor_in.time_slots   
         
         db.commit()
         db.refresh(counselor)
