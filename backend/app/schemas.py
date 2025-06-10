@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 import re
 from .models import DayOfWeek, TimeSlot, RoleEnum
-
+from fastapi import UploadFile, File
 
 
 class PasswordChangeRequest(BaseModel):
@@ -23,6 +23,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: RoleEnum
+
     @validator('password')
     def password_complexity(cls, v):
         if len(v) < 8:
@@ -51,10 +52,13 @@ class UserOut(BaseModel):
     lastname: str
     email: EmailStr
     role: RoleEnum
+    profile_image_url: Optional[str] = None  
+    profile_image_filename: Optional[str] = None  
     registrationDate: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
 
 class StudentOut(BaseModel):
     firstname: str
@@ -66,6 +70,7 @@ class StudentOut(BaseModel):
     academic_year: Optional[str]  
     major: Optional[str] 
     gpa: Optional[float]
+    profile_image_url: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -80,7 +85,7 @@ class CounselorOut(BaseModel):
     department: Optional[str]
     available_days: List[DayOfWeek] = Field(..., description="List of available days for the counselor")
     time_slots: List[TimeSlot] = Field(..., description="List of available time slots")
-
+    profile_image_url: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -115,5 +120,12 @@ class CounselorUpdate(UserUpdate):
     class Config:
         from_attributes = True
         
+        
+class CounselorsDisplay(BaseModel):
+    firstname: str
+    lastname: str
+    profile_image_url: Optional[str] = None
+    class Config:
+        from_attributes = True        
         
 

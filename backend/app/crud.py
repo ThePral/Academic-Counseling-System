@@ -2,9 +2,46 @@ from sqlalchemy.orm import Session
 from . import models, schemas, auth
 from .schemas import RoleEnum
 from fastapi import HTTPException
+import boto3
+from botocore.exceptions import NoCredentialsError  
+from dotenv import load_dotenv
+import os
+from typing import Optional
+from fastapi import UploadFile, File
+import io
+from fastapi import UploadFile
+load_dotenv()
+
+LIARA_ENDPOINT = os.getenv("LIARA_ENDPOINT_URL")
+LIARA_ACCESS_KEY = os.getenv("LIARA_ACCESS_KEY")
+LIARA_SECRET_KEY = os.getenv("LIARA_SECRET_KEY")
+LIARA_BUCKET_NAME = os.getenv("BUCKET_NAME")
 
 
-def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
+s3 = boto3.client(
+    "s3",
+    endpoint_url=LIARA_ENDPOINT,
+    aws_access_key_id=LIARA_ACCESS_KEY,
+    aws_secret_access_key=LIARA_SECRET_KEY,
+)
+
+
+def upload_file_to_s3(file : UploadFile):
+    s3.upload_fileobj(file.file, LIARA_BUCKET_NAME, file.filename)
+    return file.filename 
+
+def update_user_profile_with_image(db: Session, user_id: int, file: UploadFile):
+    user = db.query(models.User).filter(models.User.userid == user_id).first()
+    file_name = upload_file_to_s3(file)
+    profile_image_url = f"/{LIARA_BUCKET_NAME}/{file_name}"  
+    user.profile_image_filename = file_name
+    user.profile_image_url = profile_image_url
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+def create_user(db: Session, user_in: schemas.UserCreate, file: Optional[UploadFile] = None) -> models.User:
     if db.query(models.User).filter(models.User.email == user_in.email).first():
         return None
 
@@ -18,6 +55,7 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     db.add(db_user)
     db.commit() 
     db.refresh(db_user) 
+
     if user_in.role == models.RoleEnum.student:
         db_student = models.Student(user_id=db_user.userid)  
         db.add(db_student)
@@ -115,6 +153,9 @@ def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdat
         return user
     else:
         raise HTTPException(status_code=404, detail="User not found")  
+
+
+
 def update_student_profile(db: Session, student_id: int, student_in: schemas.StudentUpdate):
     student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
     if student:
@@ -182,3 +223,5 @@ def get_student_by_user_id(db: Session, user_id: int) -> models.Student | None:
 def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | None:
     return db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
 
+def get_all_counselors(db: Session):
+    return db.query(models.User).filter(models.User.role== RoleEnum.counselor).all()

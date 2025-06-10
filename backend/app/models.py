@@ -37,7 +37,9 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(PGEnum(RoleEnum, name="role_enum"), nullable=False, default=RoleEnum.student)
     registrationDate = Column(DateTime, default=datetime.utcnow)
-
+    profile_image_url = Column(String, nullable=True)  
+    profile_image_filename = Column(String, nullable=True) 
+    
     student = relationship("Student", back_populates="user", uselist=False)
     counselor = relationship("Counselor", back_populates="user", uselist=False)
 
