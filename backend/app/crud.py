@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas, auth
 from .schemas import RoleEnum
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 import boto3
 from botocore.exceptions import NoCredentialsError  
 from dotenv import load_dotenv
@@ -10,6 +10,8 @@ from typing import Optional
 from fastapi import UploadFile, File
 import io
 from fastapi import UploadFile
+from .models import TimeSlot, DayOfWeek
+
 load_dotenv()
 
 LIARA_ENDPOINT = os.getenv("LIARA_ENDPOINT_URL")
@@ -188,11 +190,7 @@ def update_counselor_profile(db: Session, user_id: int, counselor_in: schemas.Co
         if counselor_in.city:
             counselor.city = counselor_in.city 
         if counselor_in.department:
-            counselor.department = counselor_in.department
-        if counselor_in.available_days is not None:
-            counselor.available_days = counselor_in.available_days
-        if counselor_in.time_slots is not None:
-            counselor.time_slots = counselor_in.time_slots   
+            counselor.department = counselor_in.department 
         
         db.commit()
         db.refresh(counselor)
@@ -225,3 +223,67 @@ def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | No
 
 def get_all_counselors(db: Session):
     return db.query(models.User).filter(models.User.role== RoleEnum.counselor).all()
+
+
+
+
+
+
+def create_available_slot(db: Session, available_slot_in: schemas.CounselorAvailableSlotCreate, payload: dict = Depends(auth.JWTBearer())):
+
+    user_id = int(payload.get("sub"))
+
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+    
+    existing_slot = db.query(models.CounselorAvailableSlot).filter(
+        models.CounselorAvailableSlot.counselor_id == counselor.counselor_id,
+        models.CounselorAvailableSlot.day == available_slot_in.day,
+        models.CounselorAvailableSlot.slot == available_slot_in.slot).first()
+    if existing_slot:
+        raise HTTPException(status_code=400, detail="Slot already exists")
+    
+    new_slot = models.CounselorAvailableSlot(
+        counselor_id=counselor.counselor_id,
+        day=available_slot_in.day,
+        slot=available_slot_in.slot
+    )  
+    db.add(new_slot)
+    db.commit()
+    db.refresh(new_slot)
+    
+    return new_slot
+
+
+def get_available_slots(db: Session, payload: dict = Depends(auth.JWTBearer())):
+    user_id = int(payload.get("sub"))
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+    return db.query(models.CounselorAvailableSlot).filter(models.CounselorAvailableSlot.counselor_id == counselor.counselor_id).all()
+
+
+
+def delete_available_slot(db: Session, available_slots_id: int, payload: dict = Depends(auth.JWTBearer())):
+    user_id = int(payload.get("sub"))
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+
+    slot_to_delete = db.query(models.CounselorAvailableSlot).filter(
+        models.CounselorAvailableSlot.counselor_id == counselor.counselor_id,
+        models.CounselorAvailableSlot.available_slots_id == available_slots_id).first()
+
+    if not slot_to_delete:
+        raise HTTPException(status_code=404, detail="Slot not found")
+
+    db.delete(slot_to_delete)
+    db.commit()
+
+    return {"message": "Slot deleted"}
+
+

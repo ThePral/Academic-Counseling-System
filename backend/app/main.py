@@ -6,6 +6,8 @@ from .database import engine, get_db
 from .models import Base
 from app.schemas import PasswordChangeRequest
 from fastapi import UploadFile, File
+from typing import List
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -116,8 +118,6 @@ def get_counselor_info(db: Session = Depends(get_db), payload: dict = Depends(au
         'province': counselor.province,
         'city': counselor.city,
         'department': counselor.department if counselor.department else None,
-        'available_days': [day.value for day in counselor.available_days] if counselor.available_days else [],
-        'time_slots': [slot.value for slot in counselor.time_slots] if counselor.time_slots else [],
         'profile_image_url': user.profile_image_url
     }
     return schemas.CounselorOut(**counselor_data)
@@ -174,8 +174,6 @@ def update_counselor(counselor_in: schemas.CounselorUpdate, db: Session = Depend
             'province': counselor.province,
             'city': counselor.city,
             'department': counselor.department if counselor.department else None,
-            'available_days': [day.value for day in counselor.available_days] if counselor.available_days else [],
-            'time_slots': [slot.value for slot in counselor.time_slots] if counselor.time_slots else []
         }
         return schemas.CounselorUpdate(**counselor_data)
     else:
@@ -232,3 +230,18 @@ def get_counselors(db: Session = Depends(get_db)):
     if not counselors:
         raise HTTPException(status_code=404, detail="No counselors found")
     return counselors
+
+
+@app.post("/counselors/me/available-slots", response_model=schemas.CounselorAvailableSlotOut)
+def create_available_slot(available_slot_in: schemas.CounselorAvailableSlotCreate, db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
+    return crud.create_available_slot(db, available_slot_in, payload)
+
+@app.get("/counselors/me/available-slots", response_model=List[schemas.CounselorAvailableSlotOut])
+def get_available_slots(db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
+    return crud.get_available_slots(db, payload)
+
+@app.delete("/counselors/me/available-slots", status_code=status.HTTP_204_NO_CONTENT)
+def delete_available_slot(available_slots_id: int, db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
+    return crud.delete_available_slot(db, available_slots_id, payload)
+
+

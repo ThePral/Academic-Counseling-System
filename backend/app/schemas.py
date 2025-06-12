@@ -83,8 +83,6 @@ class CounselorOut(BaseModel):
     province: Optional[str]
     city: Optional[str]
     department: Optional[str]
-    available_days: List[DayOfWeek] = Field(..., description="List of available days for the counselor")
-    time_slots: List[TimeSlot] = Field(..., description="List of available time slots")
     profile_image_url: Optional[str] = None
     class Config:
         from_attributes = True
@@ -114,8 +112,6 @@ class CounselorUpdate(UserUpdate):
     province: Optional[str]
     city: Optional[str]
     department: Optional[str]
-    available_days: List[DayOfWeek] = Field(..., description="List of available days for the counselor")
-    time_slots: List[TimeSlot] = Field(..., description="List of available time slots")
     
     class Config:
         from_attributes = True
@@ -128,4 +124,27 @@ class CounselorsDisplay(BaseModel):
     class Config:
         from_attributes = True        
         
+ 
+ 
+ 
+        
+class CounselorAvailableSlotCreate(BaseModel):
+    day: DayOfWeek
+    slot: TimeSlot
 
+class CounselorAvailableSlotOut(BaseModel):
+    available_slots_id: int
+    day: DayOfWeek
+    slot: TimeSlot
+
+    class Config:
+        from_attributes = True
+   
+
+class CounselorAvailableSlotUpdate(BaseModel):
+    day: Optional[DayOfWeek]
+    slot: Optional[TimeSlot]
+    
+class CounselorAvailableSlotDelete(BaseModel):
+    available_slots_id: int
+    

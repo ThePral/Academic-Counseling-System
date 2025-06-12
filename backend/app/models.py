@@ -66,7 +66,15 @@ class Counselor(Base):
     province = Column(String, nullable=True)
     city = Column(String, nullable=True)
     department = Column(String, nullable=True)
-    available_days = Column(ARRAY(PGEnum(DayOfWeek, name="day_enum")), nullable=True)
-    time_slots = Column(ARRAY(PGEnum(TimeSlot, name="time_slot_enum")), nullable=True)
 
     user = relationship("User", back_populates="counselor")
+    available_slots = relationship("CounselorAvailableSlot", back_populates="counselor", cascade="all, delete-orphan")
+class CounselorAvailableSlot(Base):
+    __tablename__ = "counselor_available_slots"
+
+    available_slots_id = Column(Integer, primary_key=True, autoincrement=True)
+    counselor_id = Column(Integer, ForeignKey("counselors.counselor_id"), nullable=False)
+    day = Column(PGEnum(DayOfWeek, name="day_enum"), nullable=False)
+    slot = Column(PGEnum(TimeSlot, name="time_slot_enum"), nullable=False)
+
+    counselor = relationship("Counselor", back_populates="available_slots")
