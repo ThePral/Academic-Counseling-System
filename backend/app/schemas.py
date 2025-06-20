@@ -2,8 +2,10 @@ from pydantic import BaseModel, EmailStr,  validator, Field, constr
 from typing import Optional, List
 from datetime import datetime
 import re
-from .models import DayOfWeek, TimeSlot, RoleEnum
+from .models import RoleEnum, AppointmentStatus
 from fastapi import UploadFile, File
+from app.utils.datetime import jalali_to_gregorian
+
 
 
 class PasswordChangeRequest(BaseModel):
@@ -128,23 +130,77 @@ class CounselorsDisplay(BaseModel):
  
  
         
-class CounselorAvailableSlotCreate(BaseModel):
-    day: DayOfWeek
-    slot: TimeSlot
+# schemas.py
 
-class CounselorAvailableSlotOut(BaseModel):
-    available_slots_id: int
-    day: DayOfWeek
-    slot: TimeSlot
+from pydantic import BaseModel, validator
+from datetime import date, time
+from typing import List
+from app.utils.datetime import jalali_to_gregorian
+
+
+class TimeRangeInput(BaseModel):
+    date: date
+    from_time: time
+    to_time: time
+    duration_minutes: int
+
+    @validator("date", pre=True)
+    def convert_jalali(cls, v):
+        if isinstance(v, str):
+            return jalali_to_gregorian(v)
+        return v
+
+
+class TimeRangeOut(BaseModel):
+    id: int
+    date: date
+    from_time: time
+    to_time: time
+    duration: int
 
     class Config:
         from_attributes = True
-   
 
-class CounselorAvailableSlotUpdate(BaseModel):
-    day: Optional[DayOfWeek]
-    slot: Optional[TimeSlot]
-    
-class CounselorAvailableSlotDelete(BaseModel):
-    available_slots_id: int
-    
+
+class SlotOut(BaseModel):
+    id: int
+    start_time: time
+    end_time: time
+    is_reserved: bool
+
+    class Config:
+        from_attributes = True
+
+
+class TimeRangeWithSlots(BaseModel):
+    id: int
+    date: date
+    from_time: time
+    to_time: time
+    duration: int
+    slots: List[SlotOut]
+
+    class Config:
+        from_attributes = True
+
+
+
+#appointment
+
+
+class AppointmentCreate(BaseModel):
+    slot_id: int
+    notes: Optional[str] = None
+
+class AppointmentOut(BaseModel):
+    id: int
+    student_id: int
+    counselor_id: int
+    slot_id: int
+    date: date
+    time: time   
+    status: AppointmentStatus
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True

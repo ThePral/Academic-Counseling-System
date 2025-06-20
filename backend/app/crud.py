@@ -10,7 +10,9 @@ from typing import Optional
 from fastapi import UploadFile, File
 import io
 from fastapi import UploadFile
-from .models import TimeSlot, DayOfWeek
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+from app.models import CounselorTimeRange, AvailableTimeSlot
 
 load_dotenv()
 
@@ -228,62 +230,116 @@ def get_all_counselors(db: Session):
 
 
 
+def check_range_overlap(db: Session, counselor_id: int, date, from_time, to_time) -> bool:
+    return db.query(CounselorTimeRange).filter(
+        CounselorTimeRange.counselor_id == counselor_id,
+        CounselorTimeRange.date == date,
+        CounselorTimeRange.from_time < to_time,
+        CounselorTimeRange.to_time > from_time
+    ).first() is not None
 
-def create_available_slot(db: Session, available_slot_in: schemas.CounselorAvailableSlotCreate, payload: dict = Depends(auth.JWTBearer())):
 
-    user_id = int(payload.get("sub"))
+def create_time_range_with_slots(db: Session, counselor_id: int, date, from_time, to_time, duration_minutes: int):
+    time_range = CounselorTimeRange(
+        counselor_id=counselor_id,
+        date=date,
+        from_time=from_time,
+        to_time=to_time,
+        duration=duration_minutes
+    )
+    db.add(time_range)
+    db.flush()
 
-    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
+    current = datetime.combine(date, from_time)
+    end = datetime.combine(date, to_time)
 
-    if not counselor:
-        raise HTTPException(status_code=404, detail="Counselor not found")
-    
-    existing_slot = db.query(models.CounselorAvailableSlot).filter(
-        models.CounselorAvailableSlot.counselor_id == counselor.counselor_id,
-        models.CounselorAvailableSlot.day == available_slot_in.day,
-        models.CounselorAvailableSlot.slot == available_slot_in.slot).first()
-    if existing_slot:
-        raise HTTPException(status_code=400, detail="Slot already exists")
-    
-    new_slot = models.CounselorAvailableSlot(
-        counselor_id=counselor.counselor_id,
-        day=available_slot_in.day,
-        slot=available_slot_in.slot
-    )  
-    db.add(new_slot)
+    slots = []
+    while current + timedelta(minutes=duration_minutes) <= end:
+        slot = AvailableTimeSlot(
+            range_id=time_range.id,
+            start_time=current.time(),
+            end_time=(current + timedelta(minutes=duration_minutes)).time(),
+            is_reserved=False,
+        )
+        db.add(slot)
+        slots.append(slot)
+        current += timedelta(minutes=duration_minutes)
+
     db.commit()
-    db.refresh(new_slot)
-    
-    return new_slot
+    return time_range, slots
 
 
-def get_available_slots(db: Session, payload: dict = Depends(auth.JWTBearer())):
-    user_id = int(payload.get("sub"))
-    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
-
-    if not counselor:
-        raise HTTPException(status_code=404, detail="Counselor not found")
-    return db.query(models.CounselorAvailableSlot).filter(models.CounselorAvailableSlot.counselor_id == counselor.counselor_id).all()
+def get_ranges_by_counselor(db: Session, counselor_id: int):
+    return db.query(CounselorTimeRange).filter(CounselorTimeRange.counselor_id == counselor_id).all()
 
 
+def get_slots_by_range(db: Session, range_id: int):
+    return db.query(AvailableTimeSlot).filter(AvailableTimeSlot.range_id == range_id).all()
 
-def delete_available_slot(db: Session, available_slots_id: int, payload: dict = Depends(auth.JWTBearer())):
-    user_id = int(payload.get("sub"))
-    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
 
-    if not counselor:
-        raise HTTPException(status_code=404, detail="Counselor not found")
-
-    slot_to_delete = db.query(models.CounselorAvailableSlot).filter(
-        models.CounselorAvailableSlot.counselor_id == counselor.counselor_id,
-        models.CounselorAvailableSlot.available_slots_id == available_slots_id).first()
-
-    if not slot_to_delete:
-        raise HTTPException(status_code=404, detail="Slot not found")
-
-    db.delete(slot_to_delete)
+def delete_range_by_id(db: Session, range_id: int):
+    obj = db.query(CounselorTimeRange).filter(CounselorTimeRange.id == range_id).first()
+    if not obj:
+        return False
+    db.delete(obj)
     db.commit()
+    return True
 
-    return {"message": "Slot deleted"}
+
+def delete_slot_by_id(db: Session, slot_id: int):
+    obj = db.query(AvailableTimeSlot).filter(AvailableTimeSlot.id == slot_id).first()
+    if not obj:
+        return False
+    db.delete(obj)
+    db.commit()
+    return True
 
 
+
+#appoinment
+def create_appointment(db: Session, student_id: int, slot_id: int, notes: Optional[str] = None):
+    slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == slot_id).first()
+
+    if not slot or slot.is_reserved:
+        raise HTTPException(400, "Slot not available")
+
+    counselor_id = slot.time_range.counselor_id
+    print(counselor_id)
+    appointment_datetime = datetime.combine(slot.time_range.date, slot.start_time)
+    
+    print("sjjcbl", student_id)
+    print()
+    appointment = models.Appointment(
+        student_id=student_id,
+        counselor_id=counselor_id,
+        slot_id=slot.id,
+        date=slot.time_range.date, 
+        time=slot.start_time,
+        status=models.AppointmentStatus.pending,
+        notes=notes
+    )
+    db.add(appointment)
+    db.commit()
+    db.refresh(appointment)
+    return appointment
+
+def approve_appointment(db: Session, appointment_id: int):
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(404, "Appointment not found")
+
+    appointment.status = models.AppointmentStatus.approved
+    appointment.slot.is_reserved = True
+    db.commit()
+    return appointment
+
+def cancel_appointment(db: Session, appointment_id: int):
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(404, "Appointment not found")
+
+    # آزاد کردن slot
+    appointment.slot.is_reserved = False
+    db.delete(appointment)
+    db.commit()
+    return True

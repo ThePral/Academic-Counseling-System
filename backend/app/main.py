@@ -3,11 +3,16 @@ from sqlalchemy.orm import Session
 from .schemas import RoleEnum
 from . import models, schemas, crud, auth
 from .database import engine, get_db
-from .models import Base
+from .models import Base, AvailableTimeSlot
 from app.schemas import PasswordChangeRequest
 from fastapi import UploadFile, File
 from typing import List
-
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app import crud, schemas
+from app.database import get_db
+from app.models import RoleEnum
+from app.auth import JWTBearer
 
 Base.metadata.create_all(bind=engine)
 
@@ -23,7 +28,7 @@ def is_own_data(user_id: int, data_id: int) -> bool:
 
 @app.post("/signup", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    user = crud.create_user(db, user_in)  # ارسال فایل به تابع create_user
+    user = crud.create_user(db, user_in) 
 
     if not user:
         raise HTTPException(
@@ -232,16 +237,94 @@ def get_counselors(db: Session = Depends(get_db)):
     return counselors
 
 
-@app.post("/counselors/me/available-slots", response_model=schemas.CounselorAvailableSlotOut)
-def create_available_slot(available_slot_in: schemas.CounselorAvailableSlotCreate, db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
-    return crud.create_available_slot(db, available_slot_in, payload)
-
-@app.get("/counselors/me/available-slots", response_model=List[schemas.CounselorAvailableSlotOut])
-def get_available_slots(db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
-    return crud.get_available_slots(db, payload)
-
-@app.delete("/counselors/me/available-slots", status_code=status.HTTP_204_NO_CONTENT)
-def delete_available_slot(available_slots_id: int, db: Session = Depends(get_db), payload: dict = Depends(auth.JWTBearer())):
-    return crud.delete_available_slot(db, available_slots_id, payload)
 
 
+@app.post("/counselors/time-slots")
+def create_time_range(time_input: schemas.TimeRangeInput, db: Session = Depends(get_db), payload: dict = Depends(JWTBearer())):
+    user_id = int(payload.get("sub"))
+    counselor = crud.get_counselor_by_user_id(db, user_id)
+    user = crud.get_user_by_id(db, user_id)
+    
+    if user.role != RoleEnum.counselor:
+        raise HTTPException(403, "Only counselors can create slots")
+    
+    counselor = crud.get_counselor_by_user_id(db, user_id)
+    if not counselor:
+        raise HTTPException(404, "Counselor not found")
+
+    if crud.check_range_overlap(db, counselor.counselor_id, time_input.date, time_input.from_time, time_input.to_time):
+        raise HTTPException(400, "Overlapping time range")
+
+    time_range, slots = crud.create_time_range_with_slots(
+        db, counselor.counselor_id,
+        time_input.date, time_input.from_time, time_input.to_time,
+        time_input.duration_minutes
+    )
+
+    return {"range_id": time_range.id, "slot_count": len(slots)}
+
+
+@app.get("/counselors/ranges", response_model=List[schemas.TimeRangeOut])
+def get_my_ranges(db: Session = Depends(get_db), payload: dict = Depends(JWTBearer())):
+    user_id = int(payload.get("sub"))
+    counselor = crud.get_counselor_by_user_id(db, user_id)
+    if not counselor:
+        raise HTTPException(404, "Counselor not found")
+
+    return crud.get_ranges_by_counselor(db, counselor.counselor_id)
+
+
+@app.get("/counselors/ranges/{range_id}/slots", response_model=schemas.TimeRangeWithSlots)
+def get_slots_for_range(range_id: int, db: Session = Depends(get_db)):
+    range_obj = db.query(crud.CounselorTimeRange).filter_by(id=range_id).first()
+    if not range_obj:
+        raise HTTPException(404, "Time range not found")
+
+    slots = crud.get_slots_by_range(db, range_id)
+    return {
+        "id": range_obj.id,
+        "date": range_obj.date,
+        "from_time": range_obj.from_time,
+        "to_time": range_obj.to_time,
+        "duration": range_obj.duration,
+        "slots": slots
+    }
+
+
+@app.delete("/counselors/ranges/{range_id}")
+def delete_time_range(range_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_range_by_id(db, range_id)
+    if not success:
+        raise HTTPException(404, "Range not found")
+    return {"message": "Time range deleted"}
+
+
+@app.delete("/counselors/slots/{slot_id}")
+def delete_slot(slot_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_slot_by_id(db, slot_id)
+    if not success:
+        raise HTTPException(404, "Slot not found")
+    return {"message": "Slot deleted"}
+
+
+@app.post("/appointments/", response_model=schemas.AppointmentOut)
+def book_appointment(data: schemas.AppointmentCreate, db: Session = Depends(get_db), payload: dict = Depends(JWTBearer())):
+    user_id = int(payload.get("sub"))
+    student = db.query(models.Student).filter(models.Student.user_id == user_id).first()
+    return crud.create_appointment(db, student_id=student.student_id, slot_id=data.slot_id, notes=data.notes)
+
+
+@app.post("/appointments/{appointment_id}/approve", response_model=schemas.AppointmentOut)
+def approve_appointment(appointment_id: int, db: Session = Depends(get_db), payload: dict = Depends(JWTBearer())):
+    user_id = int(payload.get("sub"))
+    user = crud.get_user_by_id(db, user_id)
+    
+    if user.role != RoleEnum.counselor:
+        raise HTTPException(403, "Only counselors can approve appointments")
+
+    return crud.approve_appointment(db, appointment_id)
+
+
+@app.delete("/appointments/{appointment_id}")
+def cancel_appointment(appointment_id: int, db: Session = Depends(get_db), payload: dict = Depends(JWTBearer())):
+    return crud.cancel_appointment(db, appointment_id)
