@@ -14,13 +14,20 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.models import CounselorTimeRange, AvailableTimeSlot
 
+
+def is_admin(user_role: RoleEnum) -> bool:
+    return user_role == RoleEnum.admin
+
+def is_own_data(user_id: int, data_id: int) -> bool:
+    return user_id == data_id
+
+
 load_dotenv()
 
 LIARA_ENDPOINT = os.getenv("LIARA_ENDPOINT_URL")
 LIARA_ACCESS_KEY = os.getenv("LIARA_ACCESS_KEY")
 LIARA_SECRET_KEY = os.getenv("LIARA_SECRET_KEY")
 LIARA_BUCKET_NAME = os.getenv("BUCKET_NAME")
-
 
 s3 = boto3.client(
     "s3",
@@ -29,14 +36,16 @@ s3 = boto3.client(
     aws_secret_access_key=LIARA_SECRET_KEY,
 )
 
-
 def upload_file_to_s3(file : UploadFile):
+    print("nvnvhjfjncbnn")
     s3.upload_fileobj(file.file, LIARA_BUCKET_NAME, file.filename)
+    print("nvnvhjfjncbn")
     return file.filename 
 
 def update_user_profile_with_image(db: Session, user_id: int, file: UploadFile):
     user = db.query(models.User).filter(models.User.userid == user_id).first()
     file_name = upload_file_to_s3(file)
+    print("nvnvhjfjncbn")
     profile_image_url = f"/{LIARA_BUCKET_NAME}/{file_name}"  
     user.profile_image_filename = file_name
     user.profile_image_url = profile_image_url
@@ -142,6 +151,66 @@ def get_student_by_id(db: Session, student_id: int) -> models.Student | None:
 def get_counselor_by_id(db: Session, counselor_id: int) -> models.Counselor | None:
     return db.query(models.Counselor).filter(models.Counselor.counselor_id == counselor_id).first()
 
+#couselor by id 
+def get_counselor_by_id_service(db: Session, counselor_id: int) -> schemas.CounselorOut:
+    counselor = get_counselor_by_id(db, counselor_id)
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+
+    user = get_user_by_id(db, counselor.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User associated with counselor not found")
+
+    return schemas.CounselorOut(
+        firstname=user.firstname,
+        lastname=user.lastname,
+        email=user.email,
+        phone_number=counselor.phone_number,
+        province=counselor.province,
+        city=counselor.city,
+        department=counselor.department if counselor.department else None,
+        profile_image_url=user.profile_image_url
+    )
+
+#counselor, student get me
+def get_counselor_info(db: Session, payload: dict) -> schemas.CounselorOut:
+    user_id = int(payload.get("sub"))
+    user = get_user_by_id(db, user_id)
+    counselor = get_counselor_by_user_id(db, user_id)
+
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+
+    return schemas.CounselorOut(
+        firstname=user.firstname,
+        lastname=user.lastname,
+        email=user.email,
+        phone_number=counselor.phone_number,
+        province=counselor.province,
+        city=counselor.city,
+        department=counselor.department if counselor.department else None,
+        profile_image_url=user.profile_image_url
+    )
+def get_student_info(db: Session, payload: dict) -> schemas.StudentOut:
+    user_id = int(payload.get("sub"))
+    user = get_user_by_id(db, user_id)
+    student = get_student_by_user_id(db, user_id)
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    return schemas.StudentOut(
+        firstname=user.firstname,
+        lastname=user.lastname,
+        email=user.email,
+        phone_number=student.phone_number,
+        province=student.province,
+        city=student.city,
+        academic_year=student.academic_year,
+        major=student.major,
+        gpa=student.gpa,
+        profile_image_url=user.profile_image_url
+    )
 # ==== Update ====
 def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdate | schemas.CounselorUpdate):
     user = db.query(models.User).filter(models.User.userid == user_id).first()
@@ -157,8 +226,6 @@ def update_user_profile(db: Session, user_id: int, user_in: schemas.StudentUpdat
         return user
     else:
         raise HTTPException(status_code=404, detail="User not found")  
-
-
 
 def update_student_profile(db: Session, student_id: int, student_in: schemas.StudentUpdate):
     student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
@@ -180,6 +247,31 @@ def update_student_profile(db: Session, student_id: int, student_in: schemas.Stu
         return student
     else:
         raise HTTPException(status_code=404, detail="Student not found") 
+def update_student_profile_service(db: Session,payload: dict,student_in: schemas.StudentUpdate) -> schemas.StudentUpdate:
+    user_id = int(payload.get("sub"))
+    user = get_user_by_id(db, user_id)
+    student = get_student_by_user_id(db, user_id)
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if is_admin(user.role) or is_own_data(user_id, student.user_id):
+        student = update_student_profile(db, student.student_id, student_in)
+        user = update_user_profile(db, user_id, student_in)
+        return schemas.StudentUpdate(
+            firstname=user.firstname,
+            lastname=user.lastname,
+            email=user.email,
+            phone_number=student.phone_number,
+            province=student.province,
+            city=student.city,
+            academic_year=student.academic_year,
+            major=student.major,
+            gpa=student.gpa
+        )
+    else:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
 
 def update_counselor_profile(db: Session, user_id: int, counselor_in: schemas.CounselorUpdate):
     counselor = db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
@@ -198,6 +290,31 @@ def update_counselor_profile(db: Session, user_id: int, counselor_in: schemas.Co
         db.refresh(counselor)
         return counselor
     return None
+def update_counselor_profile_service(db: Session, payload: dict, counselor_in: schemas.CounselorUpdate) -> schemas.CounselorUpdate:
+    user_id = int(payload.get("sub"))
+    user = get_user_by_id(db, user_id)
+    counselor = get_counselor_by_user_id(db, user_id)
+
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+
+    if is_admin(user.role) or is_own_data(user_id, counselor.user_id):
+        counselor = update_counselor_profile(db, counselor.user_id, counselor_in)
+        user = update_user_profile(db, user_id, counselor_in)
+        return schemas.CounselorUpdate(
+            firstname=user.firstname,
+            lastname=user.lastname,
+            email=user.email,
+            phone_number=counselor.phone_number,
+            province=counselor.province,
+            city=counselor.city,
+            department=counselor.department if counselor.department else None
+        )
+    else:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+
+
 
 # ==== Delete ====
 
@@ -338,8 +455,8 @@ def cancel_appointment(db: Session, appointment_id: int):
     if not appointment:
         raise HTTPException(404, "Appointment not found")
 
-    # آزاد کردن slot
     appointment.slot.is_reserved = False
     db.delete(appointment)
     db.commit()
     return True
+

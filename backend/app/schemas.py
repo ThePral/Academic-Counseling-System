@@ -126,12 +126,7 @@ class CounselorsDisplay(BaseModel):
     class Config:
         from_attributes = True        
         
- 
- 
- 
-        
 # schemas.py
-
 from pydantic import BaseModel, validator
 from datetime import date, time
 from typing import List
