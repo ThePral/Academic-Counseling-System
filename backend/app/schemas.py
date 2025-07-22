@@ -199,3 +199,15 @@ class AppointmentOut(BaseModel):
 
     class Config:
         from_attributes = True
+        
+        
+from pydantic import  EmailStr, constr        
+# --------- Schemas ----------
+class SendCodeIn(BaseModel):
+    email: EmailStr
+
+class ResetIn(BaseModel):
+    email: EmailStr
+    code: constr(min_length=6, max_length=6)
+    new_password: constr(min_length=8)
+        
