@@ -26,7 +26,7 @@ def upload_file_to_s3(file: UploadFile):
 def update_user_profile_with_image(db: Session, user_id: int, file: UploadFile):
     user = db.query(models.User).filter(models.User.userid == user_id).first()
     file_name = upload_file_to_s3(file)
-    profile_image_url = f"http://{LIARA_BUCKET_NAME}.storage.c2.liara.space/{file_name}"
+    profile_image_url = f"https://{LIARA_BUCKET_NAME}.storage.c2.liara.space/{file_name}"
     user.profile_image_filename = file_name
     user.profile_image_url = profile_image_url
     db.commit()
