@@ -27,9 +27,9 @@ def mark_notification_as_read(notification_id: int, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
 
-@router.delete("/{notification_id}", status_code=204)
+@router.delete("/{notification_id}", response_model=schemas.Message)
 def delete_notification(notification_id: int, db: Session = Depends(get_db)):
     notification = crud.delete_notification(db, notification_id)
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-    return
+    return {"detail": "Notification deleted"}
