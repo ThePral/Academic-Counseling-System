@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from database import SessionLocal
 import crud, schemas
+from utils.connections import manager
 
 router = APIRouter()
 
@@ -33,3 +34,12 @@ def delete_notification(notification_id: int, db: Session = Depends(get_db)):
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     return {"detail": "Notification deleted"}
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
