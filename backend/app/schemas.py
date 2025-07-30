@@ -270,5 +270,17 @@ class StudyPlanOut(BaseModel):
         
 class ScoreInput(BaseModel):
     plan_id: int
-    score: conint(ge=0, le=100)        
+    score: conint(ge=0, le=100)  
+    
+class NotificationCreate(BaseModel):
+    user_id: int
+    message: str
+
+class NotificationOut(NotificationCreate):
+    id: int
+    read: bool
+    created_at: datetime
+
+    class Config:
+        orm_mode = True      
       
