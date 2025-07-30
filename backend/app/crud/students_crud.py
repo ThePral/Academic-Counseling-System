@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app import models, schemas
-from .users_crud import get_user_by_id, update_user_profile
+from app import models, schemas, crud
 
 def get_student_by_user_id(db: Session, user_id: int) -> models.Student | None:
     return db.query(models.Student).filter(models.Student.user_id == user_id).first()
@@ -11,7 +10,7 @@ def get_student_by_id(db: Session, student_id: int) -> models.Student | None:
 
 def get_student_info(db: Session, payload: dict) -> schemas.StudentOut:
     user_id = int(payload.get("sub"))
-    user = get_user_by_id(db, user_id)
+    user = crud.get_user_by_id(db, user_id)
     student = get_student_by_user_id(db, user_id)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -19,6 +18,7 @@ def get_student_info(db: Session, payload: dict) -> schemas.StudentOut:
     return schemas.StudentOut(
         firstname=user.firstname,
         lastname=user.lastname,
+        student_id=student.student_id,
         email=user.email,
         phone_number=student.phone_number,
         province=student.province,
@@ -58,15 +58,16 @@ def is_own_data(user_id: int, data_id: int) -> bool:
 
 def update_student_profile_service(db: Session, payload: dict, student_in: schemas.StudentUpdate) -> schemas.StudentUpdate:
     user_id = int(payload.get("sub"))
-    user = get_user_by_id(db, user_id)
+    user = crud.get_user_by_id(db, user_id)
     student = get_student_by_user_id(db, user_id)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     if is_admin(user.role) or is_own_data(user_id, student.user_id):
         student = update_student_profile(db, student.student_id, student_in)
-        user = update_user_profile(db, user_id, student_in)
+        user = crud.update_user_profile(db, user_id, student_in)
         return schemas.StudentUpdate(
+            student_id=student.student_id,
             firstname=user.firstname,
             lastname=user.lastname,
             email=user.email,
@@ -87,3 +88,22 @@ def delete_student(db: Session, student_id: int) -> bool:
         db.commit()
         return True
     return False
+
+
+def get_progress_percentage(db: Session, student_id: int) -> float:
+
+    plan = db.query(models.StudyPlan).filter(
+        models.StudyPlan.student_id == student_id,
+        models.StudyPlan.is_finalized == True,
+        models.StudyPlan.is_submitted_by_student == True
+    ).order_by(models.StudyPlan.student_submit_time.desc()).first()
+
+    if not plan:
+        return 0.0 
+
+    total_activities = len(plan.activities)
+    if total_activities == 0:
+        return 0.0
+
+    done_count = sum(1 for a in plan.activities if a.status == "done")
+    return round((done_count / total_activities) * 100, 2)

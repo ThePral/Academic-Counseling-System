@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app import crud, schemas, auth
 from app.database import get_db
+from app.auth import JWTBearer
+from app.crud import students_crud
+from app.schemas import StudentOut
+from typing import List
 
 router = APIRouter(
     prefix="/counselors",
@@ -37,4 +41,15 @@ def update_counselor(
     payload: dict = Depends(auth.JWTBearer())
 ):
     return crud.update_counselor_profile_service(db, payload, counselor_in)
+
+
+@router.get("/my-students", response_model=List[StudentOut])
+def get_my_students(
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    counselor_user_id = payload['sub']
+    print(counselor_user_id)
+    return crud.get_students_of_counselor(db, counselor_user_id)
+
 

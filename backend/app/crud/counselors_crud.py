@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app import models, schemas
 from .users_crud import get_user_by_id, update_user_profile
+from app.models import Appointment
 
 def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | None:
     return db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
@@ -99,4 +100,59 @@ def delete_counselor(db: Session, counselor_id: int) -> bool:
     return False
 
 def get_all_counselors(db: Session):
-    return db.query(models.User).filter(models.User.role == schemas.RoleEnum.counselor).all()
+    return (
+        db.query(
+            models.Counselor.counselor_id,
+            models.User.firstname,
+            models.User.lastname,
+            models.User.profile_image_url
+        )
+        .join(models.Counselor, models.User.userid == models.Counselor.user_id)
+        .filter(models.User.role == schemas.RoleEnum.counselor)
+        .all()
+    )
+
+
+
+from sqlalchemy.orm import Session
+from app.models import Student, Counselor
+from fastapi import HTTPException
+from app.schemas import StudentOut
+from sqlalchemy.orm import joinedload
+
+def get_students_of_counselor(db: Session, counselor_user_id: int):
+    counselor = db.query(Counselor).filter(Counselor.user_id == counselor_user_id).first()
+    if not counselor:
+        raise HTTPException(status_code=404, detail="Counselor not found")
+
+    student_ids_subq = (
+        db.query(Appointment.student_id)
+        .filter(Appointment.counselor_id == counselor.counselor_id)
+        .distinct()
+        .subquery()
+    )
+
+    students = (
+        db.query(Student)
+        .options(joinedload(Student.user))  
+        .filter(Student.student_id.in_(student_ids_subq))
+        .all()
+    )
+    
+    student_out_list = []
+    for s in students:
+        student_out_list.append(StudentOut(
+            student_id=s.student_id,
+            phone_number=s.phone_number,
+            province=s.province,
+            city=s.city,
+            academic_year=s.academic_year,
+            major=s.major,
+            gpa=s.gpa,
+            profile_image_url=s.user.profile_image_url if s.user else None,
+            firstname=s.user.firstname if s.user else "",
+            lastname=s.user.lastname if s.user else "",
+            email=s.user.email if s.user else ""
+        ))
+
+    return student_out_list

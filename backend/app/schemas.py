@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr,  validator, Field, constr
+from pydantic import BaseModel, EmailStr,  validator, Field, constr, conint
 from typing import Optional, List
 from datetime import datetime
 import re
@@ -65,6 +65,7 @@ class UserOut(BaseModel):
 class StudentOut(BaseModel):
     firstname: str
     lastname: str
+    student_id: int
     email: str
     phone_number: Optional[str]
     province: Optional[str]
@@ -120,6 +121,7 @@ class CounselorUpdate(UserUpdate):
         
         
 class CounselorsDisplay(BaseModel):
+    counselor_id : int
     firstname: str
     lastname: str
     profile_image_url: Optional[str] = None
@@ -211,3 +213,62 @@ class ResetIn(BaseModel):
     code: constr(min_length=6, max_length=6)
     new_password: constr(min_length=8)
         
+     
+from pydantic import BaseModel, validator
+from typing import List, Optional, Literal
+from datetime import date, time
+
+class ActivityInput(BaseModel):
+    date: str
+    start_time: time
+    end_time: time
+    title: str
+    description: Optional[str] = None
+
+class StudyPlanCreate(BaseModel):
+    student_id: int
+    activities: List[ActivityInput]
+
+class ActivityStatusUpdate(BaseModel):
+    activity_id: int
+    status: Literal["pending", "done", "not_done"]
+    student_note: Optional[str] = None
+
+class StudentStatusSubmit(BaseModel):
+    activities: List[ActivityStatusUpdate]
+
+class CounselorFeedback(BaseModel):
+    plan_id: int
+    feedback: str
+
+
+class StudyActivityOut(BaseModel):
+    activity_id: int
+    date: str
+    start_time: time
+    end_time: time
+    title: str
+    description: Optional[str]
+    status: str
+    student_note: Optional[str]
+
+    class Config:
+        from_attribute = True
+
+class StudyPlanOut(BaseModel):
+    plan_id: int
+    student_id: int
+    counselor_id: int
+    created_at: datetime
+    is_finalized: bool
+    is_submitted_by_student: bool
+    counselor_feedback: Optional[str]
+    activities: List[StudyActivityOut]
+
+    class Config:
+        from_attribute = True
+        
+class ScoreInput(BaseModel):
+    plan_id: int
+    score: conint(ge=0, le=100)        
+      
