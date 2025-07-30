@@ -283,4 +283,6 @@ class NotificationOut(NotificationCreate):
 
     class Config:
         orm_mode = True      
-      
+
+class Message(BaseModel):
+    detail: str
