@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from app import  schemas, auth, crud
+from app import  schemas, auth, crud, models
 from app.database import get_db
+from app.auth import JWTBearer
 
 
 router = APIRouter(
@@ -32,3 +33,13 @@ def upload_profile_image(
 ):
     user_id = int(payload.get("sub"))
     return crud.update_user_profile_with_image(db, user_id, file)
+
+@router.get("/student/progress")
+def get_progress(payload: dict = Depends(JWTBearer()), db: Session = Depends(get_db)):
+    student_user_id = payload["sub"]
+    student = db.query(models.Student).filter(models.Student.user_id == student_user_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    percent = crud.get_progress_percentage(db, student.student_id)
+    return {"progress_percent": percent}

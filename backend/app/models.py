@@ -23,11 +23,11 @@ class NotificationStatus(str, enum.Enum):
     unread = "unread"
     read = "read"
 
-class PaymentStatus(str, enum.Enum):
-    pending = "pending"
-    completed = "completed"
-    failed = "failed"
 
+class ActivityStatus(str, enum.Enum):
+    pending = "pending"
+    done = "done"
+    not_done = "not_done"
 
 # ----- USER -----
 
@@ -47,9 +47,6 @@ class User(Base):
     student = relationship("Student", back_populates="user", uselist=False)
     counselor = relationship("Counselor", back_populates="user", uselist=False)
     notifications = relationship("Notification", back_populates="user")
-    media_files = relationship("MediaFile", back_populates="user")
-    sent_messages = relationship("ChatMessage", foreign_keys='ChatMessage.sender_id', back_populates="sender")
-    received_messages = relationship("ChatMessage", foreign_keys='ChatMessage.receiver_id', back_populates="receiver")
 
 
 # ----- STUDENT -----
@@ -70,7 +67,7 @@ class Student(Base):
     appointments = relationship("Appointment", back_populates="student")
     recommendations = relationship("Recommendation", back_populates="student")
     feedbacks = relationship("Feedback", back_populates="student")
-    payments = relationship("Payment", back_populates="student")
+    study_plans = relationship("StudyPlan", back_populates="student")
 
 
 # ----- COUNSELOR -----
@@ -89,7 +86,47 @@ class Counselor(Base):
     time_ranges = relationship("CounselorTimeRange", back_populates="counselor")
     appointments = relationship("Appointment", back_populates="counselor")
     feedbacks = relationship("Feedback", back_populates="counselor")
-    payments = relationship("Payment", back_populates="counselor")
+    study_plans = relationship("StudyPlan", back_populates="counselor")
+
+
+# ----- STUDY PLAN -----
+
+class StudyPlan(Base):
+    __tablename__ = "study_plans"
+
+    plan_id = Column(Integer, primary_key=True, index=True)
+    counselor_id = Column(Integer, ForeignKey("counselors.counselor_id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("students.student_id"), nullable=False)
+    score = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_finalized = Column(Boolean, default=False)
+
+    is_submitted_by_student = Column(Boolean, default=False)
+    student_submit_time = Column(DateTime, nullable=True)
+    counselor_feedback = Column(String, nullable=True)
+    counselor_feedback_time = Column(DateTime, nullable=True)
+
+    student = relationship("Student", back_populates="study_plans")
+    counselor = relationship("Counselor", back_populates="study_plans")
+    activities = relationship("StudyActivity", back_populates="plan")
+
+
+class StudyActivity(Base):
+    __tablename__ = "study_activities"
+
+    activity_id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, ForeignKey("study_plans.plan_id"), nullable=False)
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+
+
+    status = Column(PGEnum(ActivityStatus, name="activity_status_enum"), default=ActivityStatus.pending)
+    student_note = Column(String, nullable=True)
+
+    plan = relationship("StudyPlan", back_populates="activities")
 
 
 # ----- APPOINTMENT -----
@@ -155,35 +192,6 @@ class Notification(Base):
     user = relationship("User", back_populates="notifications")
 
 
-# ----- CHAT MESSAGE -----
-
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
-
-    message_id = Column(Integer, primary_key=True, index=True)
-    sender_id = Column(Integer, ForeignKey("users.userid"), nullable=False)
-    receiver_id = Column(Integer, ForeignKey("users.userid"), nullable=False)
-    text = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-
-    sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
-    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
-
-
-# ----- MEDIA -----
-
-class MediaFile(Base):
-    __tablename__ = "media_files"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.userid"), nullable=False)
-    file_type = Column(String, nullable=False)  # مثلا: assignment, plan, profile
-    file_url = Column(String, nullable=False)  # فقط URL فضای ابری
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("User", back_populates="media_files")
-
-
 # ----- RECOMMENDATION -----
 
 class Recommendation(Base):
@@ -213,18 +221,4 @@ class Feedback(Base):
     counselor = relationship("Counselor", back_populates="feedbacks")
 
 
-# ----- PAYMENT -----
 
-class Payment(Base):
-    __tablename__ = "payments"
-
-    payment_id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.student_id"), nullable=False)
-    counselor_id = Column(Integer, ForeignKey("counselors.counselor_id"), nullable=False)
-    amount = Column(Float, nullable=False)
-    payment_date = Column(DateTime, default=datetime.utcnow)
-    status = Column(PGEnum(PaymentStatus, name="payment_status_enum"), default=PaymentStatus.pending)
-    transaction_id = Column(String, nullable=True)
-
-    student = relationship("Student", back_populates="payments")
-    counselor = relationship("Counselor", back_populates="payments")
