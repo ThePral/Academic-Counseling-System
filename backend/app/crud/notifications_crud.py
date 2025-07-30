@@ -1,12 +1,17 @@
 from sqlalchemy.orm import Session
 from models import Notification
 from schemas import NotificationCreate
+import asyncio
+from utils.connections import manager
 
 def create_notification(db: Session, notification: NotificationCreate):
     db_item = Notification(**notification.dict())
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+    asyncio.create_task(
+        manager.send_personal_message(f"New notification: {db_item.message}", db_item.user_id)
+    )
     return db_item
 
 def get_user_notifications(db: Session, user_id: int):
