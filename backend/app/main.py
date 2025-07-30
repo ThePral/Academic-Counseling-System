@@ -14,4 +14,5 @@ app.include_router(time_slots.router)
 app.include_router(public.router)
 app.include_router(reset_password.router)
 app.include_router(study_plan.router)
+app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 
