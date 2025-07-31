@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 import enum
-from database import Base
+from .database import Base
 
 Base = declarative_base()
 
@@ -180,20 +180,6 @@ class AvailableTimeSlot(Base):
     time_range = relationship("CounselorTimeRange", back_populates="slots")
 
 
-# ----- NOTIFICATION -----
-
-class Notification(Base):
-    __tablename__ = "notifications"
-
-    notification_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.userid"), nullable=False)
-    message = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    status = Column(PGEnum(NotificationStatus, name="notification_status_enum"), default=NotificationStatus.unread)
-
-    user = relationship("User", back_populates="notifications")
-
-
 # ----- RECOMMENDATION -----
 
 class Recommendation(Base):
@@ -230,7 +216,9 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
+    user_id = Column(Integer, ForeignKey("users.userid"), nullable=False)  # 👈 باید ForeignKey باشه
     message = Column(String, nullable=False)
     read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="notifications")  # 👈 رابطه معکوس تعریف بشه

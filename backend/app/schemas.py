@@ -286,3 +286,102 @@ class ScoreInput(BaseModel):
     plan_id: int
     score: conint(ge=0, le=100)        
       
+class FeedbackCreate(BaseModel):
+    rating: Optional[int] = None
+    comment: Optional[str] = None
+      
+      
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import date, time, datetime
+
+
+class FeedbackOut(BaseModel):
+    comment: Optional[str]
+    rating: Optional[int]
+    date_submitted: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FreeSlotOut(BaseModel):
+    id: int
+    start_time: time
+    end_time: time
+    time_range_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class UserMiniOut(BaseModel):
+    firstname: str
+    lastname: str
+    email: str
+    profile_image_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class SlotWithDate(BaseModel):
+    id: int
+    start_time: time
+    end_time: time
+    date: str
+    is_reserved: bool
+
+    class Config:
+        from_attributes = True
+        
+class PublicCounselorOut(BaseModel):
+    counselor_id: int
+    firstname: str
+    lastname: str
+    email: str
+    profile_image_url: Optional[str]
+    phone_number: Optional[str]
+    province: Optional[str]
+    city: Optional[str]
+    department: Optional[str]
+    feedbacks: List[FeedbackOut]
+    free_slots: List[SlotWithDate]
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackOut(BaseModel):
+    comment: Optional[str]
+    rating: Optional[int]
+    date_submitted: datetime
+
+
+# schemas.py
+
+class RecommendationCreate(BaseModel):
+    student_id: int
+    suggested_course: str
+
+class RecommendationOut(BaseModel):
+    recommendation_id: int
+    suggested_course: str
+
+    class Config:
+        from_attributes = True
+
+    
+class NotificationCreate(BaseModel):
+    user_id: int
+    message: str
+
+class NotificationOut(NotificationCreate):
+    id: int
+    read: bool
+    created_at: datetime
+
+    class Config:
+        orm_mode = True      
+
+class Message(BaseModel):
+    detail: str

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from database import SessionLocal
-import crud, schemas
-from utils.connections import manager
+from app.database import SessionLocal
+from app import crud, schemas
+from app.utils.connections import manager
 
 router = APIRouter()
 

@@ -5,7 +5,7 @@ from app.database import get_db
 
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"]
+    tags=["Authentication"]
 )
 
 @router.post("/register/", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)

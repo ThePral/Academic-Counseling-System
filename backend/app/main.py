@@ -1,12 +1,12 @@
 from fastapi import FastAPI
-from database import Base, engine
-from app.routers import auth, students, counselors, appointments, time_slots, public, reset_password, study_plan, notifications
+from .database import Base, engine
+from app.routers import  authentication,students, counselors, appointments, time_slots, public, reset_password, study_plan, notifications
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Academic Counseling API")
 
-app.include_router(auth.router)
+app.include_router(authentication.router)
 app.include_router(students.router)
 app.include_router(counselors.router)
 app.include_router(appointments.router)
