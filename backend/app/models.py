@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 import enum
+from database import Base
 
 Base = declarative_base()
 
@@ -223,4 +224,13 @@ class Feedback(Base):
     counselor = relationship("Counselor", back_populates="feedbacks")
 
 
+# ----- NOTIFICATIONS -----
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    message = Column(String, nullable=False)
+    read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
