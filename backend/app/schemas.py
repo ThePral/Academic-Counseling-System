@@ -382,7 +382,7 @@ class NotificationOut(NotificationCreate):
     created_at: datetime
 
     class Config:
-        from_attribute = True      
+        from_attributes = True      
 
 class Message(BaseModel):
     detail: str
