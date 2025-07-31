@@ -41,7 +41,6 @@ def cancel_appointment(
     return crud.cancel_appointment(db, appointment_id)
 
 
-router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
 @router.get("/pending", response_model=List[schemas.AppointmentItem])
 def get_pending_appointments(

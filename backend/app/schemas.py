@@ -207,9 +207,10 @@ from datetime import date, time
 from typing import List
 
 class AppointmentItem(BaseModel):
+    appointment_id: int
     firstname: str
     lastname: str
-    date: date
+    date: str
     start_time: time
     end_time: time
 

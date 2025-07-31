@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from app import models
 from datetime import datetime
 from typing import Optional
+from app.utils.datetime import to_jalali_str
 
 def create_appointment(db: Session, student_id: int, slot_id: int, notes: Optional[str] = None):
     slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == slot_id).first()
@@ -59,14 +60,15 @@ def get_appointments_by_status(db: Session, counselor_user_id: int, status: mode
             models.Appointment.status == status
         ).all()
 
-    # ساخت خروجی
     result = []
     for app, student, user in appointments:
         result.append({
+            "appointment_id": app.id,
             "firstname": user.firstname,
             "lastname": user.lastname,
-            "date": app.date,
+            "date": to_jalali_str(app.date),
             "start_time": app.time,
-            "end_time": app.slot.end_time  
+            "end_time": app.slot.end_time 
         })
+        print(app.status)
     return result
