@@ -382,7 +382,7 @@ class NotificationOut(NotificationCreate):
     created_at: datetime
 
     class Config:
-        orm_mode = True      
+        from_attribute = True      
 
 class Message(BaseModel):
     detail: str

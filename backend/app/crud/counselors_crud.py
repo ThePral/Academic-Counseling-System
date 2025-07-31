@@ -140,29 +140,27 @@ def get_students_of_counselor(db: Session, counselor_user_id: int):
     return student_out_list
 
 
-
 def get_counselor_dashboard_data(db: Session, counselor_user_id: int):
+    counselor = db.query(models.Counselor).filter(
+        models.Counselor.user_id == counselor_user_id
+    ).first()
 
-    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == counselor_user_id).first()
     if not counselor:
         return {"error": "Counselor not found"}
 
-    now = datetime.utcnow()
-    month_ago = now - timedelta(days=30)
+    today = datetime.utcnow().date()
 
     past_sessions = db.query(models.Appointment).filter(
         models.Appointment.counselor_id == counselor.counselor_id,
-        models.Appointment.status == "approved",
-        models.Appointment.date >= month_ago.date(),
-        models.Appointment.date <= now.date()
+        models.Appointment.status == models.AppointmentStatus.approved,
+        models.Appointment.date < today
     ).count()
 
     future_approved = db.query(models.Appointment).filter(
         models.Appointment.counselor_id == counselor.counselor_id,
-        models.Appointment.status == "approved",
-        models.Appointment.date > now.date()
+        models.Appointment.status == models.AppointmentStatus.approved,
+        models.Appointment.date >= today
     ).count()
-
 
     student_count = db.query(models.Appointment.student_id).filter(
         models.Appointment.counselor_id == counselor.counselor_id
