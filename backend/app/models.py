@@ -87,6 +87,7 @@ class Counselor(Base):
     appointments = relationship("Appointment", back_populates="counselor")
     feedbacks = relationship("Feedback", back_populates="counselor")
     study_plans = relationship("StudyPlan", back_populates="counselor")
+    recommendations = relationship("Recommendation", back_populates="counselor")
 
 
 # ----- STUDY PLAN -----
@@ -199,10 +200,11 @@ class Recommendation(Base):
 
     recommendation_id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.student_id"), nullable=False)
+    counselor_id = Column(Integer, ForeignKey("counselors.counselor_id"), nullable=False)
     suggested_course = Column(String, nullable=True)
-    career_suggestion = Column(String, nullable=True)
 
     student = relationship("Student", back_populates="recommendations")
+    counselor = relationship("Counselor", back_populates="recommendations")
 
 
 # ----- FEEDBACK -----
@@ -213,7 +215,7 @@ class Feedback(Base):
     feedback_id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.student_id"), nullable=False)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id"), nullable=False)
-    rating = Column(Integer, nullable=False)
+    rating = Column(Integer, nullable=True)
     comment = Column(String, nullable=True)
     date_submitted = Column(DateTime, default=datetime.utcnow)
 

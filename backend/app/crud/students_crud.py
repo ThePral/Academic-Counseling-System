@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app import models, schemas, crud
+from datetime import datetime, timedelta
 
 def get_student_by_user_id(db: Session, user_id: int) -> models.Student | None:
     return db.query(models.Student).filter(models.Student.user_id == user_id).first()
@@ -107,3 +108,8 @@ def get_progress_percentage(db: Session, student_id: int) -> float:
 
     done_count = sum(1 for a in plan.activities if a.status == "done")
     return round((done_count / total_activities) * 100, 2)
+
+def get_recommendations_for_student(db: Session, student_id: int):
+    return db.query(models.Recommendation).filter(models.Recommendation.student_id == student_id).all()
+
+

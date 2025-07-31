@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app import  schemas, auth, crud, models
 from app.database import get_db
 from app.auth import JWTBearer
+from typing import List
 
 
 router = APIRouter(
@@ -43,3 +44,14 @@ def get_progress(payload: dict = Depends(JWTBearer()), db: Session = Depends(get
 
     percent = crud.get_progress_percentage(db, student.student_id)
     return {"progress_percent": percent}
+
+@router.get("/my-recommendations", response_model=List[schemas.RecommendationOut])
+def get_my_recommendations(
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    student_user_id = payload["sub"]
+    student = db.query(models.Student).filter(models.Student.user_id == student_user_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return crud.get_recommendations_for_student(db, student.student_id)

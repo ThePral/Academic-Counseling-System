@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app import crud
-from app.schemas import StudyPlanCreate, StudentStatusSubmit, CounselorFeedback, ActivityStatusUpdate
+from app import crud,schemas
 from typing import List
 from app.auth import JWTBearer
-from app.models import Student
 
 
 router = APIRouter(
@@ -13,10 +11,9 @@ router = APIRouter(
     tags=["Study Plan"]
 )
 
-
 @router.post("/counselor/create")
 def create_plan(
-    data: StudyPlanCreate,
+    data: schemas.StudyPlanCreate,
     db: Session = Depends(get_db),
     payload: dict = Depends(JWTBearer())
 ):
@@ -28,8 +25,6 @@ def finalize(plan_id: int, db: Session = Depends(get_db)):
     crud.finalize_plan(db, plan_id)
     return {"detail": "Plan finalized"}
 
-
-from app.auth import JWTBearer
 
 @router.get("/student/my")
 def get_my_plan(
@@ -44,7 +39,7 @@ def get_my_plan(
 
 
 @router.post("/student/update-status")
-def update_status(updates: List[ActivityStatusUpdate], db: Session = Depends(get_db),payload: dict = Depends(JWTBearer())):
+def update_status(updates: List[schemas.ActivityStatusUpdate], db: Session = Depends(get_db),payload: dict = Depends(JWTBearer())):
     student_id = payload["sub"]
     crud.update_activity_status(db, student_id, updates)
     return {"detail": "Status updated"}
@@ -56,7 +51,7 @@ def submit_status(payload: dict = Depends(JWTBearer()), db: Session = Depends(ge
     crud.student_submit_status(db, student_id)
     return {"detail": "Status submitted"}
 
-
+# هم اطلاعات دانش اموز  و هم پلن رو برمیگردونه
 @router.get("/counselor/review/{student_id}")
 def review_plan(student_id: int, db: Session = Depends(get_db)):
     plan = crud.get_plan_for_review(db, student_id)
@@ -66,18 +61,25 @@ def review_plan(student_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/counselor/submit-feedback")
-def submit_feedback(data: CounselorFeedback, db: Session = Depends(get_db)):
+def submit_feedback(data: schemas.CounselorFeedback, db: Session = Depends(get_db)):
     crud.submit_counselor_feedback(db, data.plan_id, data.feedback)
     return {"detail": "Feedback submitted"}
 
 
-from app.schemas import ScoreInput
-from app.auth import JWTBearer
-
 @router.post("/counselor/score")
 def give_score(
-    data: ScoreInput,
+    data: schemas.ScoreInput,
     db: Session = Depends(get_db),
-    payload: dict = Depends(JWTBearer())  # احراز هویت مشاور
+    payload: dict = Depends(JWTBearer()) 
 ):
     return crud.set_plan_score(db, data.plan_id, data.score)
+
+
+@router.post("/counselor/recommend")
+def create_recommendation_for_student(
+    data: schemas.RecommendationCreate,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    counselor_user_id = payload["sub"]
+    return crud.create_recommendation(db, data.student_id, counselor_user_id, data.suggested_course)

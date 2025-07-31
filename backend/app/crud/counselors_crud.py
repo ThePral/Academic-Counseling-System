@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app import models, schemas
 from .users_crud import get_user_by_id, update_user_profile
-from app.models import Appointment
+from sqlalchemy.orm import joinedload
+from datetime import datetime, timedelta
 
 def get_counselor_by_user_id(db: Session, user_id: int) -> models.Counselor | None:
     return db.query(models.Counselor).filter(models.Counselor.user_id == user_id).first()
@@ -99,49 +100,30 @@ def delete_counselor(db: Session, counselor_id: int) -> bool:
         return True
     return False
 
-def get_all_counselors(db: Session):
-    return (
-        db.query(
-            models.Counselor.counselor_id,
-            models.User.firstname,
-            models.User.lastname,
-            models.User.profile_image_url
-        )
-        .join(models.Counselor, models.User.userid == models.Counselor.user_id)
-        .filter(models.User.role == schemas.RoleEnum.counselor)
-        .all()
-    )
 
-
-
-from sqlalchemy.orm import Session
-from app.models import Student, Counselor
-from fastapi import HTTPException
-from app.schemas import StudentOut
-from sqlalchemy.orm import joinedload
 
 def get_students_of_counselor(db: Session, counselor_user_id: int):
-    counselor = db.query(Counselor).filter(Counselor.user_id == counselor_user_id).first()
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == counselor_user_id).first()
     if not counselor:
         raise HTTPException(status_code=404, detail="Counselor not found")
 
     student_ids_subq = (
-        db.query(Appointment.student_id)
-        .filter(Appointment.counselor_id == counselor.counselor_id)
+        db.query(models.Appointment.student_id)
+        .filter(models.Appointment.counselor_id == counselor.counselor_id)
         .distinct()
         .subquery()
     )
 
     students = (
-        db.query(Student)
-        .options(joinedload(Student.user))  
-        .filter(Student.student_id.in_(student_ids_subq))
+        db.query(models.Student)
+        .options(joinedload(models.Student.user))  
+        .filter(models.Student.student_id.in_(student_ids_subq))
         .all()
     )
     
     student_out_list = []
     for s in students:
-        student_out_list.append(StudentOut(
+        student_out_list.append(schemas.StudentOut(
             student_id=s.student_id,
             phone_number=s.phone_number,
             province=s.province,
@@ -156,3 +138,38 @@ def get_students_of_counselor(db: Session, counselor_user_id: int):
         ))
 
     return student_out_list
+
+
+
+def get_counselor_dashboard_data(db: Session, counselor_user_id: int):
+
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == counselor_user_id).first()
+    if not counselor:
+        return {"error": "Counselor not found"}
+
+    now = datetime.utcnow()
+    month_ago = now - timedelta(days=30)
+
+    past_sessions = db.query(models.Appointment).filter(
+        models.Appointment.counselor_id == counselor.counselor_id,
+        models.Appointment.status == "approved",
+        models.Appointment.date >= month_ago.date(),
+        models.Appointment.date <= now.date()
+    ).count()
+
+    future_approved = db.query(models.Appointment).filter(
+        models.Appointment.counselor_id == counselor.counselor_id,
+        models.Appointment.status == "approved",
+        models.Appointment.date > now.date()
+    ).count()
+
+
+    student_count = db.query(models.Appointment.student_id).filter(
+        models.Appointment.counselor_id == counselor.counselor_id
+    ).distinct().count()
+
+    return {
+        "recent_sessions": past_sessions,
+        "upcoming_approved_requests": future_approved,
+        "unique_students": student_count
+    }

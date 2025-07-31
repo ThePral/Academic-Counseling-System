@@ -78,6 +78,8 @@ def get_student_weekly_plan(db: Session, student_user_id: int):
 
     return {
         "plan_id": plan.plan_id,
+        "score": plan.score if plan.score is not None else None,
+        "feedback": plan.counselor_feedback if plan.counselor_feedback else None,
         "is_submitted_by_student": plan.is_submitted_by_student,
         "counselor_feedback": plan.counselor_feedback,
         "activities_by_date": activities_by_date
@@ -117,7 +119,7 @@ def submit_counselor_feedback(db: Session, plan_id: int, feedback_text: str):
 
 
 def get_plan_for_review(db: Session, student_id: int):
-    # گرفتن اطلاعات دانش‌آموز و یوزر
+
     student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -126,7 +128,6 @@ def get_plan_for_review(db: Session, student_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # گرفتن جدیدترین پلن نهایی‌شده
     plan = db.query(StudyPlan).options(joinedload(StudyPlan.activities)).filter(
         StudyPlan.student_id == student_id,
         StudyPlan.is_submitted_by_student == True
@@ -167,6 +168,7 @@ def get_plan_for_review(db: Session, student_id: int):
         },
         "study_plan": {
             "plan_id": plan.plan_id if plan else None,
+            "score": plan.score if plan else None,
             "is_submitted_by_student": plan.is_submitted_by_student if plan else None,
             "counselor_feedback": plan.counselor_feedback if plan else None,
             "activities_by_date": activities_by_date
@@ -186,3 +188,17 @@ def set_plan_score(db: Session, plan_id: int, score: int):
     plan.score = score
     db.commit()
     return {"detail": "Score saved"}
+
+
+
+
+def create_recommendation(db: Session, student_id: int, counselor_id: int, suggested_course: str):
+    recommendation = models.Recommendation(
+        student_id=student_id,
+        counselor_id=counselor_id,
+        suggested_course=suggested_course
+    )
+    db.add(recommendation)
+    db.commit()
+    db.refresh(recommendation)
+    return recommendation

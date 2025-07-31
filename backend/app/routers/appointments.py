@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import crud, schemas, auth, models
 from app.database import get_db
+from typing import List
+from app.auth import JWTBearer
 
 router = APIRouter(
     prefix="/appointments",
@@ -37,3 +39,23 @@ def cancel_appointment(
     payload: dict = Depends(auth.JWTBearer())
 ):
     return crud.cancel_appointment(db, appointment_id)
+
+
+router = APIRouter(prefix="/appointments", tags=["Appointments"])
+
+@router.get("/pending", response_model=List[schemas.AppointmentItem])
+def get_pending_appointments(
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    counselor_user_id = payload["sub"]
+    return crud.get_appointments_by_status(db, counselor_user_id, schemas.AppointmentStatus.pending)
+
+
+@router.get("/approved", response_model=List[schemas.AppointmentItem])
+def get_approved_appointments(
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    counselor_user_id = payload["sub"]
+    return crud.get_appointments_by_status(db, counselor_user_id, schemas.AppointmentStatus.approved)

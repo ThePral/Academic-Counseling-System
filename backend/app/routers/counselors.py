@@ -33,6 +33,14 @@ def get_counselors(db: Session = Depends(get_db)):
     if not counselors:
         raise HTTPException(status_code=404, detail="No counselors found")
     return counselors
+@router.put("/upload-profile/", response_model=schemas.UserOut)
+def upload_profile_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    payload: dict = Depends(auth.JWTBearer())
+):
+    user_id = int(payload.get("sub"))
+    return crud.update_user_profile_with_image(db, user_id, file)
 
 @router.put("/update-profile/", response_model=schemas.CounselorUpdate)
 def update_counselor(
@@ -52,4 +60,11 @@ def get_my_students(
     print(counselor_user_id)
     return crud.get_students_of_counselor(db, counselor_user_id)
 
+@router.get("/dashboard")
+def get_counselor_dashboard(
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    counselor_user_id = payload["sub"]
+    return crud.get_counselor_dashboard_data(db, counselor_user_id)
 

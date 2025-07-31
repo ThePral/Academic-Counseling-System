@@ -42,3 +42,31 @@ def cancel_appointment(db: Session, appointment_id: int):
     db.delete(appointment)
     db.commit()
     return True
+
+
+
+
+def get_appointments_by_status(db: Session, counselor_user_id: int, status: models.AppointmentStatus):
+    
+    counselor = db.query(models.Counselor).filter(models.Counselor.user_id == counselor_user_id).first()
+    if not counselor:
+        return []
+
+    appointments = db.query(models.Appointment, models.Student, models.User).join(models.Student, models.Appointment.student_id == models.Student.student_id) \
+        .join(models.User, models.Student.user_id == models.User.userid) \
+        .filter(
+            models.Appointment.counselor_id == counselor.counselor_id,
+            models.Appointment.status == status
+        ).all()
+
+    # ساخت خروجی
+    result = []
+    for app, student, user in appointments:
+        result.append({
+            "firstname": user.firstname,
+            "lastname": user.lastname,
+            "date": app.date,
+            "start_time": app.time,
+            "end_time": app.slot.end_time  
+        })
+    return result
