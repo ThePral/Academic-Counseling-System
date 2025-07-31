@@ -25,7 +25,7 @@ def leave_feedback_route(
     payload: dict = Depends(JWTBearer())
 ):
     student_user_id = payload["sub"]
-    return crud.public_crud.leave_feedback(
+    return crud.leave_feedback(
         db=db,
         student_user_id=student_user_id,
         counselor_id=counselor_id,
