@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import crud, schemas, auth
+from app import crud, schemas, auth, models
 from app.database import get_db
 
 router = APIRouter(
@@ -73,9 +73,5 @@ def delete_time_range(range_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Range not found")
     return {"message": "Time range deleted"}
 
-@router.delete("/slot/{slot_id}")
-def delete_slot(slot_id: int, db: Session = Depends(get_db)):
-    success = crud.delete_slot_by_id(db, slot_id)
-    if not success:
-        raise HTTPException(404, "Slot not found")
-    return {"message": "Slot deleted"}
+
+

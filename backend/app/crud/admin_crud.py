@@ -50,3 +50,86 @@ def create_user(db: Session, user_in: schemas.UserCreate):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     return users_crud.create_user(db, user_in)
+
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.models import User, Student, Counselor, StudyPlan, Appointment, RoleEnum, AppointmentStatus
+
+def get_students_by_counselor(db: Session, counselor_id: int):
+    return (
+        db.query(Student)
+        .join(Appointment)
+        .filter(Appointment.counselor_id == counselor_id and Appointment.status == AppointmentStatus.approved) 
+        .all()
+    )
+
+def get_student_grades_by_counselor(db: Session, counselor_id: int):
+    return (
+        db.query(User.firstname, User.lastname, StudyPlan.score)
+        .join(Student, Student.student_id == StudyPlan.student_id)
+        .join(User, User.userid == Student.user_id)
+        .filter(StudyPlan.counselor_id == counselor_id)
+        .all()
+    )
+
+
+def get_study_plans(db: Session, status: str = None):
+    query = db.query(StudyPlan)
+    if status == "finalized":
+        query = query.filter(StudyPlan.is_finalized.is_(True))
+    elif status == "pending":
+        query = query.filter(StudyPlan.is_finalized.is_(False))
+    return query.all()
+
+def get_appointments(db: Session, status: str = None):
+    query = db.query(Appointment)
+    if status:
+        query = query.filter(Appointment.status == status)
+    return query.all()
+
+def delete_appointment_by_id(db: Session, appointment_id: int):
+    obj = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if obj:
+        db.delete(obj)
+        db.commit()
+        return True
+    return False
+
+def get_admin_dashboard_data(db: Session):
+    active_users = db.query(User).filter(User.role != RoleEnum.admin).count()
+
+    last_week = datetime.utcnow() - timedelta(days=7)
+    done_appointments = db.query(Appointment).filter(
+        Appointment.status == AppointmentStatus.approved,
+        Appointment.date >= last_week.date()
+    ).count()
+
+    top_counselors = (
+        db.query(
+            User.firstname,
+            User.lastname,
+            func.count(Appointment.id).label("session_count")
+        )
+        .join(Counselor, Counselor.user_id == User.userid)
+        .join(Appointment, Appointment.counselor_id == Counselor.counselor_id)
+        .filter(Appointment.status == AppointmentStatus.approved)
+        .group_by(User.userid)
+        .order_by(func.count(Appointment.id).desc())
+        .limit(5)
+        .all()
+    )
+    result = {
+        "active_users": active_users,
+        "done_appointments_last_week": done_appointments,
+        "top_counselors": [
+            {
+                "firstname": fname,
+                "lastname": lname,
+                "session_count": count
+            }
+            for fname, lname, count in top_counselors
+        ]
+    }
+
+    return result

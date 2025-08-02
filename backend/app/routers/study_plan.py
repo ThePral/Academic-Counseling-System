@@ -39,19 +39,22 @@ def get_my_plan(
 
 
 @router.post("/student/update-status")
-def update_status(updates: List[schemas.ActivityStatusUpdate], db: Session = Depends(get_db),payload: dict = Depends(JWTBearer())):
-    student_id = payload["sub"]
-    crud.update_activity_status(db, student_id, updates)
+def update_status(
+    updates: List[schemas.ActivityStatusUpdate],
+    db: Session = Depends(get_db),
+    payload: dict = Depends(JWTBearer())
+):
+    user_id = int(payload["sub"])
+    crud.update_activity_status(db, user_id, updates)
     return {"detail": "Status updated"}
 
 
 @router.post("/student/submit-status")
 def submit_status(payload: dict = Depends(JWTBearer()), db: Session = Depends(get_db)):
-    student_id = payload["sub"]
-    crud.student_submit_status(db, student_id)
+    user_id = int(payload["sub"])
+    crud.student_submit_status(db, user_id)
     return {"detail": "Status submitted"}
 
-# هم اطلاعات دانش اموز  و هم پلن رو برمیگردونه
 @router.get("/counselor/review/{student_id}")
 def review_plan(student_id: int, db: Session = Depends(get_db)):
     plan = crud.get_plan_for_review(db, student_id)
