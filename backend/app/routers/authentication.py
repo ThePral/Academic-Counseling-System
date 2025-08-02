@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app import schemas, crud, auth
+from app import schemas, crud, auth, models
 from app.database import get_db
 
 router = APIRouter(
@@ -11,6 +11,7 @@ router = APIRouter(
 @router.post("/register/", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     user = crud.create_user(db, user_in)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -18,17 +19,50 @@ def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         )
     return user
 
+
+
+import os
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+load_dotenv(dotenv_path=os.path.abspath(env_path))
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+import secrets
+print("✅ THIS FILE IS RUNNING")
+
 @router.post("/login/", response_model=schemas.Token)
 def login(form_data: schemas.UserLogin, db: Session = Depends(get_db)):
+    print(">>> Login attempt")
+    print("Expected email:", repr(ADMIN_EMAIL))
+    print("Expected password:", repr(ADMIN_PASSWORD))
+    print("Incoming email:", repr(form_data.email))
+    print("Incoming password:", repr(form_data.password))
+
+    if (
+        secrets.compare_digest(form_data.email, ADMIN_EMAIL) and
+        secrets.compare_digest(form_data.password, ADMIN_PASSWORD)
+    ):
+        print(">>> Admin login successful")
+        access_token = auth.create_access_token(subject="admin", role=models.RoleEnum.admin)
+        refresh_token = auth.create_refresh_token(subject="admin")
+        return {"access_token": access_token, "refresh_token": refresh_token}
+
+    print(">>> Not admin, checking DB...")
     user = crud.authenticate_user(db, form_data.email, form_data.password)
     if not user:
+        print(">>> Invalid DB credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
+
+    print(">>> DB login successful")
     access_token = auth.create_access_token(subject=user.userid, role=user.role)
     refresh_token = auth.create_refresh_token(subject=user.userid)
     return {"access_token": access_token, "refresh_token": refresh_token}
+
 
 @router.post("/update-password/")
 def change_password(request: schemas.PasswordChangeRequest, db: Session = Depends(get_db)):

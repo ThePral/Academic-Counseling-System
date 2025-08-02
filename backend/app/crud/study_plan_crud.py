@@ -161,8 +161,9 @@ def get_plan_for_review(db: Session, student_id: int):
             "phone_number": student.phone_number,
             "province": student.province,
             "city": student.city,
-            "academic_year": student.academic_year,
-            "major": student.major,
+            "education_year": student.educational_level,
+            "field_of_study": student.field_of_study,
+            "semester_or_year": student.semester_or_year,
             "gpa": student.gpa,
             "profile_image_url": user.profile_image_url
         },

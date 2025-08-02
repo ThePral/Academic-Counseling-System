@@ -12,6 +12,19 @@ def get_db():
         yield db
     finally:
         db.close()
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # فقط برای فعال نگه داشتن کانکشن
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
+        
+@router.post("/notify/{user_id}")
+async def trigger_notification(user_id: int, message: str):
+    await manager.send_personal_message(message, user_id)
+    return {"status": "sent"}
 
 @router.post("/", response_model=schemas.NotificationOut)
 def send_notification(notification: schemas.NotificationCreate, db: Session = Depends(get_db)):

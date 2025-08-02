@@ -24,8 +24,9 @@ def get_student_info(db: Session, payload: dict) -> schemas.StudentOut:
         phone_number=student.phone_number,
         province=student.province,
         city=student.city,
-        academic_year=student.academic_year,
-        major=student.major,
+        education_year=student.educational_level,
+        field_of_study=student.field_of_study,
+        semester_or_year=student.semester_or_year,
         gpa=student.gpa,
         profile_image_url=user.profile_image_url
     )
@@ -39,10 +40,12 @@ def update_student_profile(db: Session, student_id: int, student_in: schemas.Stu
             student.province = student_in.province
         if student_in.city:
             student.city = student_in.city
-        if student_in.academic_year:
-            student.academic_year = student_in.academic_year
-        if student_in.major:
-            student.major = student_in.major
+        if student_in.education_year:
+            student.educational_level = student_in.education_year
+        if student_in.field_of_study:
+            student.field_of_study = student_in.field_of_study
+        if student_in.semester_or_year:
+            student.semester_or_year = student_in.semester_or_year    
         if student_in.gpa is not None:
             student.gpa = student_in.gpa
         db.commit()
@@ -75,8 +78,9 @@ def update_student_profile_service(db: Session, payload: dict, student_in: schem
             phone_number=student.phone_number,
             province=student.province,
             city=student.city,
-            academic_year=student.academic_year,
-            major=student.major,
+            education_year=student.educational_level,
+            field_of_study=student.field_of_study,
+            semester_or_year=student.semester_or_year,
             gpa=student.gpa
         )
     else:

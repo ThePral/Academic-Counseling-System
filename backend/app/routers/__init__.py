@@ -7,4 +7,6 @@ from .time_slots import *
 from .study_plan import *
 from .reset_password import *
 from .notifications import *
+from .public import *
+from .admin import *
 

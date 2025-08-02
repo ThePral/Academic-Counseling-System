@@ -59,3 +59,27 @@ def delete_slot_by_id(db: Session, slot_id: int):
     db.delete(obj)
     db.commit()
     return True
+
+
+# timeslots_crud.py
+
+from sqlalchemy.orm import Session
+from app.models import AvailableTimeSlot, CounselorTimeRange
+
+def get_slots_by_range(db: Session, range_id: int):
+    return db.query(AvailableTimeSlot).filter(AvailableTimeSlot.range_id == range_id).all()
+
+def get_time_ranges_with_slots_for_counselor(db: Session, counselor_id: int):
+    ranges = db.query(CounselorTimeRange).filter_by(counselor_id=counselor_id).all()
+    result = []
+    for range_obj in ranges:
+        slots = get_slots_by_range(db, range_obj.id)
+        result.append({
+            "id": range_obj.id,
+            "date": range_obj.date,
+            "from_time": range_obj.from_time,
+            "to_time": range_obj.to_time,
+            "duration": range_obj.duration,
+            "slots": slots
+        })
+    return result
