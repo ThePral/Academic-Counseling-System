@@ -70,8 +70,9 @@ class StudentOut(BaseModel):
     phone_number: Optional[str]
     province: Optional[str]
     city: Optional[str]
-    academic_year: Optional[str]  
-    major: Optional[str] 
+    education_year: Optional[str] 
+    field_of_study: Optional[str] = Field(None, alias='field_of_study')
+    semester_or_year: Optional[str] = None
     gpa: Optional[float]
     profile_image_url: Optional[str] = None
     
@@ -105,8 +106,9 @@ class StudentUpdate(BaseModel):
     phone_number: Optional[str] 
     province: Optional[str]
     city: Optional[str] 
-    academic_year: Optional[str]
-    major: Optional[str]
+    education_year: Optional[str] 
+    field_of_study: Optional[str] = Field(None, alias='field_of_study')
+    semester_or_year: Optional[str] = None
     gpa: Optional[float]
     
     
@@ -386,3 +388,23 @@ class NotificationOut(NotificationCreate):
 
 class Message(BaseModel):
     detail: str
+    
+    
+# schemas.py
+from pydantic import BaseModel
+from enum import Enum
+
+class UserOut(BaseModel):
+    userid: int
+    firstname: str
+    lastname: str
+    email: str
+    role: RoleEnum
+
+    class Config:
+        from_attributes = True
+    
+
+class TokenData(BaseModel):
+    sub: str
+    role: str 

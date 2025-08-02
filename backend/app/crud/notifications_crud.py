@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from models import Notification
-from schemas import NotificationCreate
+from app.models import Notification
+from app.schemas import NotificationCreate
 import asyncio
-from utils.connections import manager
+from app.utils.connections import manager
 
 def create_notification(db: Session, notification: NotificationCreate):
     db_item = Notification(**notification.dict())

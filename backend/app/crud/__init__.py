@@ -5,3 +5,5 @@ from .appointments_crud import *
 from .timeslots_crud import *
 from .study_plan_crud import *
 from .public_crud import *
+from .notifications_crud import *
+from .admin_crud import *
