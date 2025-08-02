@@ -1,0 +1,1 @@
+{"version":3,"file":"useLayout.d.ts","sourceRoot":"","sources":["../../../src/components/rangeInput/useLayout.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAuB,MAAM,OAAO,CAAC;AAEvD,KAAK,MAAM,GAAG;IACZ,KAAK,EAAE,MAAM,CAAC;IACd,MAAM,EAAE,MAAM,CAAC;CAChB,CAAC;AAEF,eAAO,MAAM,SAAS,sDA+BrB,CAAC"}
