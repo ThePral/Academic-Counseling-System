@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .database import Base, engine
-from app.routers import  authentication,students, counselors, appointments, time_slots, public, reset_password, study_plan, notifications
+from app.routers import  authentication,students, counselors, appointments, time_slots, public, reset_password, study_plan, notifications, admin
 
 Base.metadata.create_all(bind=engine)
 
