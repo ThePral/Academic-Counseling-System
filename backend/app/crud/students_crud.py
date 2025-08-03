@@ -117,3 +117,8 @@ def get_recommendations_for_student(db: Session, student_id: int):
     return db.query(models.Recommendation).filter(models.Recommendation.student_id == student_id).all()
 
 
+def get_user_by_student_id(db: Session, student_id: int):
+    student = db.query(models.Student).filter_by(student_id=student_id).first()
+    if student:
+        return db.query(models.User).filter_by(userid=student.user_id).first()
+    return None

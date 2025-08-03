@@ -1,0 +1,1 @@
+{"version":3,"file":"header.d.ts","sourceRoot":"","sources":["../../../../src/components/range/rangeDays/header.tsx"],"names":[],"mappings":"AAOA,MAAM,WAAW,WAAW;IAC1B,mBAAmB,CAAC,EAAE,MAAM,IAAI,CAAC;IACjC,kBAAkB,CAAC,EAAE,MAAM,IAAI,CAAC;CACjC;AAED,QAAA,MAAM,WAAW,iDAGd,WAAW,gBA+Cb,CAAC;AAEF,OAAO,EAAE,WAAW,EAAE,CAAC"}
