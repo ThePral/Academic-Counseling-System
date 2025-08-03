@@ -85,28 +85,45 @@ def get_student_weekly_plan(db: Session, student_user_id: int):
         "activities_by_date": activities_by_date
     }
 
-def update_activity_status(db: Session, student_id: int, updates: list[ActivityStatusUpdate]):
+def update_activity_status(db: Session, user_id: int, updates: list[ActivityStatusUpdate]):
+    student = db.query(models.Student).filter(models.Student.user_id == user_id).first()
+    if not student:
+        raise HTTPException(404, detail="Student not found")
+    
+    student_id = student.student_id
+    updated = False
+
     for upd in updates:
         activity = db.query(StudyActivity).join(StudyPlan).filter(
             StudyActivity.activity_id == upd.activity_id,
-            StudyPlan.student_id == student_id
+            StudyPlan.student_id == student_id,
+            StudyActivity.plan_id == StudyPlan.plan_id
         ).first()
-        if not activity:
-            continue
-        activity.status = upd.status
-        activity.student_note = upd.student_note
-    db.commit()
+        if activity:
+            activity.status = upd.status
+            activity.student_note = upd.student_note
+            updated = True
 
-def student_submit_status(db: Session, student_id: int):
+    if updated:
+        db.commit()
+
+def student_submit_status(db: Session, user_id: int):
+    student = db.query(models.Student).filter(models.Student.user_id == user_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
     plan = db.query(StudyPlan).filter(
-        StudyPlan.student_id == student_id,
+        StudyPlan.student_id == student.student_id,
         StudyPlan.is_finalized == True
     ).order_by(StudyPlan.created_at.desc()).first()
+
     if not plan:
         raise HTTPException(status_code=404, detail="No finalized plan found")
+
     plan.is_submitted_by_student = True
     plan.student_submit_time = datetime.utcnow()
     db.commit()
+
 
 def submit_counselor_feedback(db: Session, plan_id: int, feedback_text: str):
     plan = db.query(StudyPlan).filter(StudyPlan.plan_id == plan_id).first()

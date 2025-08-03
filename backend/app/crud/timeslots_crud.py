@@ -52,16 +52,6 @@ def delete_range_by_id(db: Session, range_id: int):
     db.commit()
     return True
 
-def delete_slot_by_id(db: Session, slot_id: int):
-    obj = db.query(AvailableTimeSlot).filter(AvailableTimeSlot.id == slot_id).first()
-    if not obj:
-        return False
-    db.delete(obj)
-    db.commit()
-    return True
-
-
-# timeslots_crud.py
 
 from sqlalchemy.orm import Session
 from app.models import AvailableTimeSlot, CounselorTimeRange

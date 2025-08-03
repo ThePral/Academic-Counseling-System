@@ -408,3 +408,18 @@ class UserOut(BaseModel):
 class TokenData(BaseModel):
     sub: str
     role: str 
+    
+    
+class StudentGradeOut(BaseModel):
+    firstname: str
+    lastname: str
+    score: Optional[int]
+class TopCounselor(BaseModel):
+    firstname: str
+    lastname: str
+    session_count: int
+
+class AdminDashboardOut(BaseModel):
+    active_users: int
+    done_appointments_last_week: int
+    top_counselors: List[TopCounselor]    

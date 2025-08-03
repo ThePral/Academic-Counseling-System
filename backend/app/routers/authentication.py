@@ -34,31 +34,22 @@ print("✅ THIS FILE IS RUNNING")
 
 @router.post("/login/", response_model=schemas.Token)
 def login(form_data: schemas.UserLogin, db: Session = Depends(get_db)):
-    print(">>> Login attempt")
-    print("Expected email:", repr(ADMIN_EMAIL))
-    print("Expected password:", repr(ADMIN_PASSWORD))
-    print("Incoming email:", repr(form_data.email))
-    print("Incoming password:", repr(form_data.password))
 
     if (
         secrets.compare_digest(form_data.email, ADMIN_EMAIL) and
         secrets.compare_digest(form_data.password, ADMIN_PASSWORD)
     ):
-        print(">>> Admin login successful")
         access_token = auth.create_access_token(subject="admin", role=models.RoleEnum.admin)
         refresh_token = auth.create_refresh_token(subject="admin")
         return {"access_token": access_token, "refresh_token": refresh_token}
 
-    print(">>> Not admin, checking DB...")
     user = crud.authenticate_user(db, form_data.email, form_data.password)
     if not user:
-        print(">>> Invalid DB credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    print(">>> DB login successful")
     access_token = auth.create_access_token(subject=user.userid, role=user.role)
     refresh_token = auth.create_refresh_token(subject=user.userid)
     return {"access_token": access_token, "refresh_token": refresh_token}

@@ -1,4 +1,3 @@
-# appointments_crud.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app import models
