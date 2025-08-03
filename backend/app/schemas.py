@@ -138,6 +138,7 @@ from app.utils.datetime import jalali_to_gregorian
 
 
 class TimeRangeInput(BaseModel):
+    student_id: int
     date: date
     from_time: time
     to_time: time
@@ -152,6 +153,7 @@ class TimeRangeInput(BaseModel):
 
 class TimeRangeOut(BaseModel):
     id: int
+    student_id: int
     date: date
     from_time: time
     to_time: time
@@ -173,6 +175,7 @@ class SlotOut(BaseModel):
 
 class TimeRangeWithSlots(BaseModel):
     id: int
+    student_id: int
     date: date
     from_time: time
     to_time: time
