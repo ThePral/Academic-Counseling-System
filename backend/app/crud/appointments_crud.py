@@ -4,8 +4,10 @@ from app import models
 from datetime import datetime
 from typing import Optional
 from app.utils.datetime import to_jalali_str
+from app.models import Appointment, Notification
+from app.routers.notifications import manager
 
-def create_appointment(db: Session, student_id: int, slot_id: int, notes: Optional[str] = None):
+async def create_appointment(db: Session, student_id: int, slot_id: int, notes: Optional[str] = None):
     slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == slot_id).first()
     if not slot or slot.is_reserved:
         raise HTTPException(400, "Slot not available")
@@ -23,6 +25,18 @@ def create_appointment(db: Session, student_id: int, slot_id: int, notes: Option
     db.add(appointment)
     db.commit()
     db.refresh(appointment)
+    
+    student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
+    user_id = student.user_id
+    
+    message = f"A new appointment has been booked for you. Slot ID: {slot_id}."
+    
+    await manager.send_personal_message(message, user_id)
+    
+    db_notification = Notification(user_id=user_id, message=message)
+    db.add(db_notification)
+    db.commit()
+    
     return appointment
 
 def approve_appointment(db: Session, appointment_id: int):
