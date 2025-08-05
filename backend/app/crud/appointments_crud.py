@@ -6,6 +6,7 @@ from typing import Optional
 from app.utils.datetime import to_jalali_str
 from app.models import Appointment, Notification
 from app.routers.notifications import manager
+import asyncio
 
 async def create_appointment(db: Session, student_id: int, slot_id: int, notes: Optional[str] = None):
     slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == slot_id).first()
@@ -39,13 +40,28 @@ async def create_appointment(db: Session, student_id: int, slot_id: int, notes: 
     
     return appointment
 
-def approve_appointment(db: Session, appointment_id: int):
+async def approve_appointment(db: Session, appointment_id: int):
     appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appointment:
         raise HTTPException(404, "Appointment not found")
+
     appointment.status = models.AppointmentStatus.approved
     appointment.slot.is_reserved = True
+
     db.commit()
+    db.refresh(appointment)
+
+    student = db.query(models.Student).filter_by(student_id=appointment.student_id).first()
+    user_id = student.user_id
+
+    message = f"Your appointment (ID: {appointment.id}) has been approved."
+    
+    asyncio.create_task(manager.send_personal_message(message, user_id))
+
+    db_notification = Notification(user_id=user_id, message=message)
+    db.add(db_notification)
+    db.commit()
+
     return appointment
 
 def cancel_appointment(db: Session, appointment_id: int):
