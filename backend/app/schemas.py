@@ -191,6 +191,7 @@ class TimeRangeWithSlots(BaseModel):
 
 
 class AppointmentCreate(BaseModel):
+    student_id: int
     slot_id: int
     notes: Optional[str] = None
 
