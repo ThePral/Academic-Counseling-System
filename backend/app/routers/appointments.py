@@ -30,7 +30,7 @@ async def book_appointment(
     )
 
 @router.post("/{appointment_id}/approve", response_model=schemas.AppointmentOut)
-def approve_appointment(
+async def approve_appointment(
     appointment_id: int,
     db: Session = Depends(get_db),
     payload: dict = Depends(auth.JWTBearer())
@@ -39,7 +39,9 @@ def approve_appointment(
     user = crud.get_user_by_id(db, user_id)
     if user.role != models.RoleEnum.counselor:
         raise HTTPException(403, "Only counselors can approve appointments")
-    return crud.approve_appointment(db, appointment_id)
+
+    return await crud.approve_appointment(db, appointment_id)
+
 
 @router.delete("/{appointment_id}/cancel")
 def cancel_appointment(
