@@ -60,6 +60,13 @@ def get_my_students(
     print(counselor_user_id)
     return crud.get_students_of_counselor(db, counselor_user_id)
 
+@router.get("/students/{student_id}", response_model=schemas.StudentDetails)
+def get_student_info(student_id: int, db: Session = Depends(get_db)):
+    data = crud.get_student_details(db, student_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return data
+
 @router.get("/dashboard")
 def get_counselor_dashboard(
     db: Session = Depends(get_db),
@@ -67,4 +74,6 @@ def get_counselor_dashboard(
 ):
     counselor_user_id = payload["sub"]
     return crud.get_counselor_dashboard_data(db, counselor_user_id)
+
+
 

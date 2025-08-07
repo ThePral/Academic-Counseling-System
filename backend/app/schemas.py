@@ -427,3 +427,22 @@ class AdminDashboardOut(BaseModel):
     active_users: int
     done_appointments_last_week: int
     top_counselors: List[TopCounselor]    
+    
+from pydantic import BaseModel
+from typing import Optional
+
+class StudentDetails(BaseModel):
+    student_id: int
+    firstname: str
+    lastname: str
+    email: str
+    phone_number: Optional[str]
+    province: Optional[str]
+    city: Optional[str]
+    education_year: Optional[str]
+    field_of_study: Optional[str]
+    semester_or_year: Optional[str]
+    gpa: Optional[float]
+    profile_image_url: Optional[str]
+    
+    

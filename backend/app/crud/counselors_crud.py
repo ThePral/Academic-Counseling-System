@@ -174,3 +174,30 @@ def get_counselor_dashboard_data(db: Session, counselor_user_id: int):
         "upcoming_approved_requests": future_approved,
         "unique_students": student_count
     }
+
+def get_student_details(db: Session, student_id: int):
+    student = (
+        db.query(models.Student, models.User)
+        .join(models.User, models.Student.user_id == models.User.userid)
+        .filter(models.Student.student_id == student_id)
+        .first()
+    )
+
+    if not student:
+        return None
+
+    student_data, user_data = student
+    return {
+        "student_id": student_data.student_id,
+        "firstname": user_data.firstname,
+        "lastname": user_data.lastname,
+        "email": user_data.email,
+        "phone_number": student_data.phone_number,
+        "province": student_data.province,
+        "city": student_data.city,
+        "education_year": student_data.educational_level,
+        "field_of_study": student_data.field_of_study,
+        "semester_or_year": student_data.semester_or_year,
+        "gpa": student_data.gpa,
+        "profile_image_url": user_data.profile_image_url,
+    }
