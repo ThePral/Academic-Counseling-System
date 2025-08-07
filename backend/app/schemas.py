@@ -138,7 +138,6 @@ from app.utils.datetime import jalali_to_gregorian
 
 
 class TimeRangeInput(BaseModel):
-    student_id: int
     date: date
     from_time: time
     to_time: time
@@ -214,6 +213,7 @@ from typing import List
 
 class AppointmentItem(BaseModel):
     appointment_id: int
+    student_id : int
     firstname: str
     lastname: str
     date: str

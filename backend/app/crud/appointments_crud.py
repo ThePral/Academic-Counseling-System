@@ -12,7 +12,7 @@ async def create_appointment(db: Session, student_id: int, slot_id: int, notes: 
     slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == slot_id).first()
     if not slot or slot.is_reserved:
         raise HTTPException(400, "Slot not available")
-
+    range = db.query(models.CounselorTimeRange).filter(models.CounselorTimeRange.id == slot.range_id).first()
     counselor_id = slot.time_range.counselor_id
     appointment = models.Appointment(
         student_id=student_id,
@@ -28,9 +28,10 @@ async def create_appointment(db: Session, student_id: int, slot_id: int, notes: 
     db.refresh(appointment)
     
     student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
-    user_id = student.user_id
-    
-    message = f"A new appointment has been booked for you. Slot ID: {slot_id}."
+    student_user = db.query(models.User).filter(models.User.userid == student.user_id).first()
+    counselor = db.query(models.Counselor).filter(models.Counselor.counselor_id == counselor_id).first()
+    user_id = counselor.user_id
+    message = f"دانش‌آموز {student_user.firstname} {student_user.lastname} یک جلسه برای تاریخ {range.date} ساعت {slot.end_time} رزرو کرده است."
     
     await manager.send_personal_message(message, user_id)
     
@@ -52,13 +53,20 @@ async def approve_appointment(db: Session, appointment_id: int):
     db.refresh(appointment)
 
     student = db.query(models.Student).filter_by(student_id=appointment.student_id).first()
+    counselor = db.query(models.Counselor).filter_by(counselor_id=appointment.counselor_id).first()
+
+    student_user = student.user
+    counselor_user = counselor.user
+
     user_id = student.user_id
 
-    message = f"Your appointment (ID: {appointment.id}) has been approved."
-    
+    message = (
+        f"جلسه شما با مشاور {counselor_user.firstname} {counselor_user.lastname} "
+        f"برای تاریخ {appointment.date} ساعت {appointment.time} تایید شد."
+    )
     asyncio.create_task(manager.send_personal_message(message, user_id))
 
-    db_notification = Notification(user_id=user_id, message=message)
+    db_notification = models.Notification(user_id=user_id, message=message)
     db.add(db_notification)
     db.commit()
 
@@ -93,6 +101,7 @@ def get_appointments_by_status(db: Session, counselor_user_id: int, status: mode
     for app, student, user in appointments:
         result.append({
             "appointment_id": app.id,
+            "student_id": app.student_id,
             "firstname": user.firstname,
             "lastname": user.lastname,
             "date": to_jalali_str(app.date),

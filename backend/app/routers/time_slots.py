@@ -9,35 +9,8 @@ router = APIRouter(
     tags=["timeslots"]
 )
 
-# @router.post("/", status_code=201)
-# def create_time_range(
-#     time_input: schemas.TimeRangeInput,
-#     db: Session = Depends(get_db),
-#     payload: dict = Depends(auth.JWTBearer())
-# ):
-#     user_id = int(payload.get("sub"))
-#     counselor = crud.get_counselor_by_user_id(db, user_id)
-#     user = crud.get_user_by_id(db, user_id)
-
-#     if user.role != schemas.RoleEnum.counselor:
-#         raise HTTPException(403, "Only counselors can create slots")
-
-#     if not counselor:
-#         raise HTTPException(404, "Counselor not found")
-
-#     if crud.check_range_overlap(db, counselor.counselor_id, time_input.date, time_input.from_time, time_input.to_time):
-#         raise HTTPException(400, "Overlapping time range")
-
-#     time_range, slots = crud.create_time_range_with_slots(
-#         db, counselor.counselor_id,
-#         time_input.date, time_input.from_time, time_input.to_time,
-#         time_input.duration_minutes
-#     )
-
-#     return {"range_id": time_range.id, "slot_count": len(slots)}
-
 @router.post("/", status_code=201)
-async def create_time_range(
+def create_time_range(
     time_input: schemas.TimeRangeInput,
     db: Session = Depends(get_db),
     payload: dict = Depends(auth.JWTBearer())
@@ -55,26 +28,53 @@ async def create_time_range(
     if crud.check_range_overlap(db, counselor.counselor_id, time_input.date, time_input.from_time, time_input.to_time):
         raise HTTPException(400, "Overlapping time range")
 
-    # Create the time range and slots
     time_range, slots = crud.create_time_range_with_slots(
         db, counselor.counselor_id,
         time_input.date, time_input.from_time, time_input.to_time,
         time_input.duration_minutes
     )
 
-    # Notify the specific student
-    student_user = crud.get_user_by_student_id(db, time_input.student_id)
-    if student_user:
-        message = f"Your counselor {user.firstname} {user.lastname} has created a new time slot for {time_input.date}."
-        await crud.create_notification(
-            db=db,
-            notification=NotificationCreate(
-                user_id=student_user.userid,
-                message=message
-            )
-        )
-
     return {"range_id": time_range.id, "slot_count": len(slots)}
+
+# @router.post("/", status_code=201)
+# async def create_time_range(
+#     time_input: schemas.TimeRangeInput,
+#     db: Session = Depends(get_db),
+#     payload: dict = Depends(auth.JWTBearer())
+# ):
+#     user_id = int(payload.get("sub"))
+#     counselor = crud.get_counselor_by_user_id(db, user_id)
+#     user = crud.get_user_by_id(db, user_id)
+
+#     if user.role != schemas.RoleEnum.counselor:
+#         raise HTTPException(403, "Only counselors can create slots")
+
+#     if not counselor:
+#         raise HTTPException(404, "Counselor not found")
+
+#     if crud.check_range_overlap(db, counselor.counselor_id, time_input.date, time_input.from_time, time_input.to_time):
+#         raise HTTPException(400, "Overlapping time range")
+
+#     # Create the time range and slots
+#     time_range, slots = crud.create_time_range_with_slots(
+#         db, counselor.counselor_id,
+#         time_input.date, time_input.from_time, time_input.to_time,
+#         time_input.duration_minutes
+#     )
+
+#     # Notify the specific student
+#     student_user = crud.get_user_by_student_id(db, time_input.student_id)
+#     if student_user:
+#         message = f"Your counselor {user.firstname} {user.lastname} has created a new time slot for {time_input.date}."
+#         await crud.create_notification(
+#             db=db,
+#             notification=NotificationCreate(
+#                 user_id=student_user.userid,
+#                 message=message
+#             )
+#         )
+
+#     return {"range_id": time_range.id, "slot_count": len(slots)}
 
 @router.get("/my/", response_model=list[schemas.TimeRangeOut])
 def get_my_ranges(
