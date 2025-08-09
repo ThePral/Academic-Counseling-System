@@ -17,14 +17,15 @@ async def book_appointment(
     payload: dict = Depends(auth.JWTBearer())
 ):
     user_id = int(payload.get("sub"))
-    student = crud.get_user_by_id(db, user_id)
+    student = db.query(models.Student).filter(models.Student.user_id == user_id).first()
+    student_user = crud.get_user_by_id(db, user_id)
 
-    if student.role != models.RoleEnum.student:
+    if student_user.role != models.RoleEnum.student:
         raise HTTPException(status_code=403, detail="Only students can book appointments.")
 
     return await crud.create_appointment(
         db,
-        student_id=data.student_id,
+        student_id=student.student_id,
         slot_id=data.slot_id,
         notes=data.notes
     )

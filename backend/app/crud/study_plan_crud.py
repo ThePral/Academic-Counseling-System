@@ -7,15 +7,21 @@ from app.utils.datetime import jalali_to_gregorian, to_jalali_str
 from app import models
 from sqlalchemy.orm import joinedload
 from app.utils.datetime import to_jalali_str
+from app.routers.notifications import manager
 
-def create_study_plan(db: Session, counselor_user_id: int, data: StudyPlanCreate) -> StudyPlan:
+
+async def create_study_plan(db, counselor_user_id: int, data) -> StudyPlan:
     counselor = db.query(Counselor).filter(Counselor.user_id == counselor_user_id).first()
     if not counselor:
         raise HTTPException(status_code=404, detail="Counselor not found")
 
+    student = db.query(models.Student).filter(models.Student.student_id == data.student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
     new_plan = StudyPlan(
         counselor_id=counselor.counselor_id,
-        student_id=data.student_id,
+        student_id=student.student_id,
         is_finalized=False
     )
     db.add(new_plan)
@@ -23,19 +29,27 @@ def create_study_plan(db: Session, counselor_user_id: int, data: StudyPlanCreate
     db.refresh(new_plan)
 
     for act in data.activities:
-        activity = StudyActivity(
+        db.add(StudyActivity(
             plan_id=new_plan.plan_id,
             date=jalali_to_gregorian(act.date) if isinstance(act.date, str) else act.date,
             start_time=act.start_time,
             end_time=act.end_time,
             title=act.title,
             description=act.description
-        )
-        db.add(activity)
-
-
+        ))
     db.commit()
+
+    counselor_user = db.query(models.User).get(counselor.user_id)  
+    student_user_id = student.user_id                       
+
+    message = f"برنامه‌ی جدیدی توسط مشاور {counselor_user.firstname} {counselor_user.lastname} برای شما ایجاد شد."
+
+    await manager.send_personal_message(message, student_user_id)
+    db.add(models.Notification(user_id=student_user_id, message=message))
+    db.commit()
+
     return new_plan
+
 
 def finalize_plan(db: Session, plan_id: int):
     plan = db.query(StudyPlan).filter(StudyPlan.plan_id == plan_id).first()

@@ -23,6 +23,9 @@ async def create_appointment(db: Session, student_id: int, slot_id: int, notes: 
         status=models.AppointmentStatus.pending,
         notes=notes
     )
+    slot = db.query(models.AvailableTimeSlot).filter(models.AvailableTimeSlot.id == appointment.slot_id).first()
+    slot.is_reserved = True
+    
     db.add(appointment)
     db.commit()
     db.refresh(appointment)
@@ -47,7 +50,6 @@ async def approve_appointment(db: Session, appointment_id: int):
         raise HTTPException(404, "Appointment not found")
 
     appointment.status = models.AppointmentStatus.approved
-    appointment.slot.is_reserved = True
 
     db.commit()
     db.refresh(appointment)

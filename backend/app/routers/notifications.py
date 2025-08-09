@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app import crud, schemas
 from app.utils.connections import manager
+from app.auth import JWTBearer
 
 router = APIRouter()
 
@@ -31,7 +32,8 @@ def send_notification(notification: schemas.NotificationCreate, db: Session = De
     return crud.create_notification(db, notification)
 
 @router.get("/{user_id}", response_model=list[schemas.NotificationOut])
-def list_notifications(user_id: int, db: Session = Depends(get_db)):
+def list_notifications(payload: dict = Depends(JWTBearer()), db: Session = Depends(get_db)):
+    user_id = payload["sub"]
     return crud.get_user_notifications(db, user_id)
 
 @router.patch("/{notification_id}/read", response_model=schemas.NotificationOut)

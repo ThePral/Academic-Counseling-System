@@ -12,13 +12,14 @@ router = APIRouter(
 )
 
 @router.post("/counselor/create")
-def create_plan(
+async def create_plan(
     data: schemas.StudyPlanCreate,
     db: Session = Depends(get_db),
     payload: dict = Depends(JWTBearer())
 ):
     counselor_user_id = payload["sub"]
-    return crud.create_study_plan(db, counselor_user_id, data)
+    return await crud.create_study_plan(db, counselor_user_id, data)
+
 
 @router.post("/counselor/finalize/{plan_id}")
 def finalize(plan_id: int, db: Session = Depends(get_db)):
