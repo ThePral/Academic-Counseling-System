@@ -152,7 +152,7 @@ class TimeRangeInput(BaseModel):
 
 class TimeRangeOut(BaseModel):
     id: int
-    student_id: int
+    counselor_id: int
     date: date
     from_time: time
     to_time: time
