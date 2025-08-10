@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models import CounselorTimeRange, AvailableTimeSlot
-from datetime import datetime, timedelta
+from datetime import datetime
+from sqlalchemy.orm import Session
+
 
 def check_range_overlap(db: Session, counselor_id: int, date, from_time, to_time) -> bool:
     return db.query(CounselorTimeRange).filter(
@@ -52,9 +54,6 @@ def delete_range_by_id(db: Session, range_id: int):
     db.commit()
     return True
 
-
-from sqlalchemy.orm import Session
-from app.models import AvailableTimeSlot, CounselorTimeRange
 
 def get_slots_by_range(db: Session, range_id: int):
     return db.query(AvailableTimeSlot).filter(AvailableTimeSlot.range_id == range_id).all()
