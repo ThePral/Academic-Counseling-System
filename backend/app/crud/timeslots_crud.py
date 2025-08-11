@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import CounselorTimeRange, AvailableTimeSlot
 from datetime import datetime
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 
 def check_range_overlap(db: Session, counselor_id: int, date, from_time, to_time) -> bool:
