@@ -94,7 +94,7 @@ class Counselor(Base):
 class StudyPlan(Base):
     __tablename__ = "study_plans"
 
-    plan_id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id", ondelete="CASCADE"), nullable=False)
     student_id = Column(Integer, ForeignKey("students.student_id", ondelete="CASCADE"), nullable=False)
     score = Column(Integer, nullable=True)
@@ -114,7 +114,7 @@ class StudyPlan(Base):
 class StudyActivity(Base):
     __tablename__ = "study_activities"
 
-    activity_id = Column(Integer, primary_key=True, index=True)
+    activity_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     plan_id = Column(Integer, ForeignKey("study_plans.plan_id", ondelete="CASCADE"), nullable=False)
     date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)
@@ -131,7 +131,7 @@ class StudyActivity(Base):
 class Appointment(Base):
     __tablename__ = "appointments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     student_id = Column(Integer, ForeignKey("students.student_id", ondelete="CASCADE"), nullable=False)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id", ondelete="CASCADE"), nullable=False)
     slot_id = Column(Integer, ForeignKey("available_time_slots.id", ondelete="CASCADE"), nullable=False)
@@ -149,7 +149,7 @@ class Appointment(Base):
 class CounselorTimeRange(Base):
     __tablename__ = "counselor_time_ranges"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id", ondelete="CASCADE"), nullable=False)
     date = Column(Date, nullable=False)
     from_time = Column(Time, nullable=False)
@@ -164,7 +164,7 @@ class CounselorTimeRange(Base):
 class AvailableTimeSlot(Base):
     __tablename__ = "available_time_slots"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     range_id = Column(Integer, ForeignKey("counselor_time_ranges.id", ondelete="CASCADE"), nullable=False)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
@@ -177,7 +177,7 @@ class AvailableTimeSlot(Base):
 class Recommendation(Base):
     __tablename__ = "recommendations"
 
-    recommendation_id = Column(Integer, primary_key=True, index=True)
+    recommendation_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     student_id = Column(Integer, ForeignKey("students.student_id", ondelete="CASCADE"), nullable=False)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id", ondelete="CASCADE"), nullable=False)
     suggested_course = Column(String, nullable=True)
@@ -190,7 +190,7 @@ class Recommendation(Base):
 class Feedback(Base):
     __tablename__ = "feedback"
 
-    feedback_id = Column(Integer, primary_key=True, index=True)
+    feedback_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     student_id = Column(Integer, ForeignKey("students.student_id", ondelete="CASCADE"), nullable=False)
     counselor_id = Column(Integer, ForeignKey("counselors.counselor_id", ondelete="CASCADE"), nullable=False)
     rating = Column(Integer, nullable=True)
