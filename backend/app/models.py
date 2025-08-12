@@ -205,7 +205,7 @@ class Feedback(Base):
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.userid", ondelete="CASCADE"), nullable=False)
     message = Column(String, nullable=False)
     read = Column(Boolean, default=False)
