@@ -1,0 +1,84 @@
+.admin-surface {
+    direction: rtl;
+    color: #f5f5f5;
+  }
+  
+  .admin-title {
+    color: #ffcc00;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .admin-badge {
+    background: #ffcc00;
+    color: #0d0d0d;
+    border: 1px solid #664d00;
+  }
+  
+  .admin-card {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 204, 0, 0.05) inset;
+  }
+  
+  .admin-card-header {
+    background: #1c1c1c;
+    color: #ffde59;
+    border-bottom: 1px solid #2a2a2a;
+    font-weight: 600;
+  }
+  
+  .admin-stat {
+    padding: 16px 16px 18px 16px;
+  }
+  .admin-stat .label {
+    color: #c7c7c7;
+    font-size: 0.92rem;
+  }
+  .admin-stat .value {
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 4px;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+  }
+  .admin-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 204, 0, 0.12);
+    color: #ffcc00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  
+  .admin-list .admin-list-item {
+    background: #141414;
+    color: #eaeaea;
+    border-color: #242424;
+  }
+  .admin-list .admin-list-item .name {
+    font-weight: 500;
+  }
+  .admin-list .admin-list-item:hover {
+    background: #181818;
+  }
+  
+  .admin-pill {
+    background: #ffcc00;
+    color: #0d0d0d;
+    border-radius: 999px;
+    min-width: 36px;
+    text-align: center;
+    font-weight: 700;
+  }
+  
+  .admin-loading {
+    color: #ffde59;
+  }
+  

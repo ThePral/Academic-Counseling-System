@@ -1,0 +1,140 @@
+
+body,
+.home {
+  background-color: #000;
+  color: white;
+  direction: rtl;
+  text-align: right;
+}
+
+.bg-blue {
+  background-color: #4267B2 !important;
+}
+
+.text-yellow {
+  color: #FFEA00 !important;
+}
+
+.btn-yellow {
+  background-color: #FFEA00;
+  color: #000;
+  z-index: 2;
+}
+
+/* .btn-yellow:hover {
+    background-color: #1e00ff;
+} */
+
+.scroll-horizontal {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.scroll-horizontal .card {
+  display: inline-block;
+  width: 200px;
+  margin-left: 1rem;
+}
+
+.banner {
+  background-image: url('banner.webp');
+  background-size: cover;
+  height: 1000px;
+  position: relative;
+}
+
+.banner-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  color: #ffffff;
+}
+
+.banner-content button{
+  color: #FFEA00;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+}
+
+.accordion-button::after {
+  position: absolute;
+  left: 1rem;
+  right: auto;
+}
+.accordion-button {
+  position: relative;
+}
+  
+.accordion-body {
+  background-color: #f8f9fa; 
+  color: #000;
+}
+
+
+.scroll-horizontal {
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+  direction: ltr; 
+}
+  
+.scroll-track {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-left 30s linear infinite;
+}
+
+.scroll-horizontal:hover .scroll-track {
+  animation-play-state: paused;
+}
+
+.scroll-track .card {
+  width: 250px;
+  display: inline-block;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+  
+.footer-logo {
+  width: 150px;
+  height: auto; 
+}
+  
+  
+.footer-link {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+  
+.footer-link:hover {
+  color: #FFEA00;
+}
+  
+@media (max-width: 576px) {
+.logo-img {
+    height: 30px;
+}
+}
+  
+@media (max-width: 768px) {
+  .banner {
+    height: 250px;
+    max-height: 40vh;
+  }
+}

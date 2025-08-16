@@ -1,0 +1,105 @@
+body, .advisor-selector {
+  background-color: #000;
+  color: white;
+  direction: rtl;
+  min-height: 100vh;
+}
+
+h2 {
+  text-align: center;
+  color: #FFEA00;
+  margin-bottom: 30px;
+}
+
+.advisor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.advisor-card {
+  display: flex;
+  align-items: center;
+  background-color: #1a1a1a;
+  border: 2px solid #4267B2;
+  border-radius: 10px;
+  padding: 15px 20px;
+  width: 90%;
+  max-width: 600px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.advisor-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px #4267B2;
+}
+
+.advisor-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-left: 20px;
+  border: 2px solid #FFEA00;
+}
+
+.advisor-info {
+  flex: 1;
+}
+
+.advisor-info h3 {
+  margin: 0 0 5px;
+  color: #FFEA00;
+  font-size: 1.2rem;
+}
+
+.advisor-info p {
+  margin: 0;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.search-input {
+  width: 90%;
+  max-width: 500px;
+  margin: 0 auto 30px;
+  display: block;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background-color: #222;
+  color: white;
+  text-align: right;
+}
+.search-input::placeholder {
+  color: #aaa;
+}
+
+.search-container {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  margin: 0 auto 25px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #4267B2;
+  background-color: #1a1a1a;
+  color: white;
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4267B2;
+  font-size: 18px;
+}

@@ -1,0 +1,144 @@
+.advisor-selection-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: black;
+  color: white;
+  width: 100%;
+  box-sizing: border-box;
+  flex-grow: 1;
+}
+
+.advisor-selection-page::-webkit-scrollbar {
+  display: none;
+}
+.advisor-selection-page {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.search-bar-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px; 
+}
+
+.search-bar-advisor {
+  background-color: #1e1e1e;
+  border: 1px solid #4267B2;
+  border-radius: 6px; 
+  padding: 6px 10px;
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  color: #4267B2;
+}
+
+.search-bar-advisor input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 12px; 
+  padding: 0 6px; 
+}
+
+.search-bar-advisor input::placeholder {
+  color: #888;
+}
+
+.advisor-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.advisor-card {
+  background-color: #1e1e1e;
+  border: 1px solid #4267B2;
+  width: 200px; 
+  height: 270px; 
+  border-radius: 10px;
+  overflow: hidden;
+  perspective: 1000px;
+  cursor: pointer;
+  transition: transform 0.5s;
+  position: relative;
+  margin: 15px;
+}
+
+.advisor-card.flipped .card-front {
+  transform: rotateY(180deg);
+}
+
+.advisor-card.flipped .card-back {
+  transform: rotateY(0deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transition: transform 0.6s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.card-front {
+  background-color: #1e1e1e;
+  transform: rotateY(0deg);
+}
+
+.card-back {
+  background-color: #4267B2;
+  transform: rotateY(180deg);
+  color: black;
+  font-weight: bold;
+  text-align: center;
+  font-size: 14px; 
+  padding: 12px; 
+}
+
+.advisor-card img {
+  width: 60px; 
+  height: 60px; 
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 8px; 
+}
+
+.card-front h4 {
+  font-size: 16px; 
+  margin-bottom: 6px;
+}
+
+.card-front p {
+  font-size: 12px; 
+  margin-bottom: 8px;
+}
+
+.chat-button {
+  background-color: #ffea00;
+  color: black;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px; 
+  margin-top: 8px; 
+  cursor: pointer;
+  font-size: 12px; 
+  transition: background-color 0.3s;
+}
+
+.chat-button:hover {
+  background-color: #e6d500;
+}

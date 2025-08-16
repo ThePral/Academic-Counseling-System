@@ -1,0 +1,16 @@
+{
+    "platform": "static",
+    "static": {
+      "public": "build",
+      "spa": true,
+      "routes": [
+        { "src": "^/api/(.*)$", "dest": "https://nit-academic-counseling.liara.run/$1", "proxy": true }
+      ],
+      "headers": [
+        {
+          "src": "/static/(.*)",
+          "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+        }
+      ]
+    }
+  }  

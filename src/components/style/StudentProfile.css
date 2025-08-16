@@ -1,0 +1,94 @@
+  .student-profile.page {
+  direction: rtl;
+  color: #e7e7e7;
+  background: #0f1115;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: IRANSans, Vazirmatn, sans-serif;
+}
+
+.student-profile .header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.student-profile .btn.back {
+  background: transparent;
+  border: 1px solid #2a2f3a;
+  color: #e7e7e7;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.student-profile .btn.back:hover { border-color: #4b5563; }
+
+.student-profile h2 { margin: 0; font-size: 20px; }
+
+.student-profile .card {
+  background: #131722;
+  border: 1px solid #1f2430;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.student-profile .avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.student-profile .avatar img {
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #2a2f3a;
+}
+
+.student-profile .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.student-profile .field {
+  background: #0f1320;
+  border: 1px solid #1f2430;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.student-profile .field-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.student-profile .field-value {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px;
+  color: #e5e7eb;
+  word-break: break-word;
+}
+
+.student-profile .copy-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background: #0b0f19;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+.student-profile .copy-btn:hover { border-color: #4b5563; }
+
+.student-profile .muted { color: #9ca3af; }
+
+.student-profile .error-box {
+  background: #2a1111;
+  border: 1px solid #7f1d1d;
+  color: #fca5a5;
+  padding: 12px;
+  border-radius: 12px;
+}
